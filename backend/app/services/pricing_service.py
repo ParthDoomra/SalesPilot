@@ -148,6 +148,16 @@ class PricingService:
         ai_tokens = spec.get("ai_credits_estimate", 1000000)
         monthly_ai = (ai_tokens / 1000000) * 15.0
 
+        # Convert to INR (1 USD = 83 INR)
+        USD_TO_INR = 83.0
+        monthly_compute *= USD_TO_INR
+        monthly_db *= USD_TO_INR
+        monthly_storage *= USD_TO_INR
+        monthly_network *= USD_TO_INR
+        monthly_cache *= USD_TO_INR
+        monthly_backup *= USD_TO_INR
+        monthly_ai *= USD_TO_INR
+
         # Totals
         total_monthly = (
             monthly_compute + 

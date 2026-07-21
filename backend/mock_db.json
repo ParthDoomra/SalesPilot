@@ -90,7 +90,7 @@
       "description": "Workspace Ingestion Solution",
       "status": "Draft",
       "createdAt": 1784657109.5623019,
-      "updatedAt": 1784657162.2821498,
+      "updatedAt": 1784657782.633394,
       "owner": "se@salespilot.ai"
     }
   },
@@ -248,7 +248,7 @@
       "reportText": "# Requirement Analysis Report: Retail Solution\n\n## 1. Project Specifications Summary\n* **Industry Vertical**: Retail\n* **Preferred Cloud**: Any\n* **Timeline Target**: 6 months\n* **Monthly Budget Cap**: $50,000 USD\n* **Expected User Base**: 50,000 expected users\n\n## 2. Business Objectives\n* Implement cloud-enabled digital workflows for Retail services.\n* Optimize operational efficiencies and customer access channels.\n\n## 3. Functional Requirements\n* Core database management and search functionality.\n* User registration, login profiles, and access authorization.\n* API services layer to support clients and remote transactions.\n\n## 4. Non-Functional Requirements\n* High availability uptime targeting 99.9% SLA.\n* Standard response latencies under 500ms.\n\n## 5. Security & Compliance\n* **Security Requirements**:\n    - Encryption of sensitive user credentials and data in transit.\n  - Standard HTTPS endpoint certificates and API key authorization.\n* **Compliance Standards**:\n    - General data protection guidelines.\n  - SOC2 Audit alignment (best practice).\n\n## 6. Integrations & Interfaces\n* Database layer storage.\n* External email/notification API service.\n\n## 7. Crucial Missing Information (To Be Resolved)\n> [!WARNING]\n> The following parameters were not defined in the source document and represent critical design gaps:\n* Specific hosting budget caps are undefined.\n* High availability and disaster recovery paired regions are not specified.\n* Authentication protocol choice (SSO, federated) is not detailed.\n\n## 8. Presales Project Risks\n> [!CAUTION]\n* Security vulnerability risks if standard SSO credentials aren't enforced.\n* Timeline constraints if custom legacy integrations are uncovered late.\n",
       "extractedText": "============================================================\r\nPROJECT REQUIREMENT DOCUMENT\r\nBonne Perfumes\r\n============================================================\r\n\r\nProject Name:\r\nBonne Perfumes E-Commerce Platform\r\n\r\nCompany Name:\r\nBonne Perfumes\r\n\r\nIndustry:\r\nRetail / Fragrance & Cosmetics\r\n\r\nProject Overview\r\n\r\nBonne Perfumes is a premium fragrance brand planning to launch a modern e-commerce platform to sell perfumes directly to customers across India.\r\n\r\nThe objective is to create a fast, secure, and scalable online shopping experience that reflects the luxury identity of the brand while providing a seamless purchasing journey.\r\n\r\nThe platform should support both desktop and mobile users and allow customers to browse products, explore fragrance collections, purchase perfumes, and track their orders.\r\n\r\n------------------------------------------------------------\r\n\r\nBusiness Objectives\r\n\r\n\u2022 Increase direct online sales.\r\n\u2022 Expand the customer base across India.\r\n\u2022 Build brand awareness through a premium digital experience.\r\n\u2022 Reduce dependency on third-party marketplaces.\r\n\u2022 Support future international expansion.\r\n\r\n------------------------------------------------------------\r\n\r\nTarget Audience\r\n\r\n\u2022 Men\r\n\u2022 Women\r\n\u2022 Unisex fragrance buyers\r\n\u2022 Gift shoppers\r\n\u2022 Returning customers\r\n\r\n------------------------------------------------------------\r\n\r\nPlatforms\r\n\r\n\u2022 Responsive Web Application\r\n\u2022 Mobile-friendly experience\r\n\r\n------------------------------------------------------------\r\n\r\nCore Features\r\n\r\nCustomer Features\r\n\r\n\u2022 User Registration and Login\r\n\u2022 Guest Checkout\r\n\u2022 Product Catalog\r\n\u2022 Advanced Search\r\n\u2022 Filter by Brand, Fragrance Type, Price and Gender\r\n\u2022 Product Detail Pages\r\n\u2022 Wishlist\r\n\u2022 Shopping Cart\r\n\u2022 Secure Checkout\r\n\u2022 Order Tracking\r\n\u2022 Order History\r\n\u2022 Customer Profile Management\r\n\u2022 Product Reviews and Ratings\r\n\u2022 Recently Viewed Products\r\n\r\nAdmin Features\r\n\r\n\u2022 Product Management\r\n\u2022 Category Management\r\n\u2022 Inventory Management\r\n\u2022 Order Management\r\n\u2022 Customer Management\r\n\u2022 Coupon and Discount Management\r\n\u2022 Banner Management\r\n\u2022 Sales Analytics Dashboard\r\n\r\n------------------------------------------------------------\r\n\r\nAI Features\r\n\r\n\u2022 Personalized perfume recommendations\r\n\u2022 \"Customers also bought\" recommendations\r\n\u2022 Trending products\r\n\u2022 Personalized homepage\r\n\r\n------------------------------------------------------------\r\n\r\nIntegrations\r\n\r\n\u2022 Razorpay Payment Gateway\r\n\u2022 Delhivery Shipping API\r\n\u2022 Email Notifications\r\n\u2022 SMS Notifications\r\n\r\n------------------------------------------------------------\r\n\r\nPerformance Requirements\r\n\r\n\u2022 Support approximately 50,000 registered users.\r\n\u2022 Expected daily visitors: 8,000\u201310,000.\r\n\u2022 Peak traffic during festivals such as Diwali, Valentine's Day, and New Year sales.\r\n\u2022 Average page load time should be under 2 seconds.\r\n\u2022 System should support future growth without major redesign.\r\n\r\n------------------------------------------------------------\r\n\r\nSecurity Requirements\r\n\r\n\u2022 Secure user authentication.\r\n\u2022 Encrypted customer information.\r\n\u2022 Secure payment processing.\r\n\u2022 HTTPS across the platform.\r\n\u2022 Role-based access for administrators.\r\n\r\n------------------------------------------------------------\r\n\r\nNon-Functional Requirements\r\n\r\n\u2022 Responsive design.\r\n\u2022 High availability.\r\n\u2022 Fast page loading.\r\n\u2022 Scalable architecture.\r\n\u2022 Easy maintenance.\r\n\u2022 SEO optimized pages.\r\n\u2022 Reliable backup strategy.\r\n\r\n------------------------------------------------------------\r\n\r\nTimeline\r\n\r\nTarget launch:\r\n6 Months\r\n\r\n------------------------------------------------------------\r\n\r\nBudget\r\n\r\nEstimated Budget:\r\n\u20b935,00,000\r\n\r\n------------------------------------------------------------\r\n\r\nCloud Preference\r\n\r\nNo preference.\r\n\r\n------------------------------------------------------------\r\n\r\nExpected Deliverables\r\n\r\n\u2022 Complete e-commerce website\r\n\u2022 Admin dashboard\r\n\u2022 Secure backend APIs\r\n\u2022 Database\r\n\u2022 Deployment on cloud infrastructure\r\n\u2022 Monitoring and logging\r\n\u2022 Documentation\r\n\r\n============================================================\r\nEND OF DOCUMENT\r\n============================================================",
       "confirmed": true,
-      "updatedAt": 1784657162.2856488
+      "updatedAt": 1784657782.636456
     }
   },
   "conversations": {
@@ -416,6 +416,54 @@
     },
     "99cde36f-7bba-43d6-93bd-3c988ceb9cdd": {
       "id": "99cde36f-7bba-43d6-93bd-3c988ceb9cdd",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_ARCHITECT",
+      "details": "Generated cloud architecture for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657109.5623019
+    },
+    "8a3b5b5c-ea98-4869-a278-19a47aa666dc": {
+      "id": "8a3b5b5c-ea98-4869-a278-19a47aa666dc",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_ARCHITECT",
+      "details": "Generated cloud architecture for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657109.5623019
+    },
+    "99b93e89-8760-471d-a227-5035bd07e467": {
+      "id": "99b93e89-8760-471d-a227-5035bd07e467",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_PIPELINE",
+      "details": "Executed end-to-end presales pipeline for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657744.9065979
+    },
+    "068b6e60-6027-44df-9bcf-8f8cfc7068bb": {
+      "id": "068b6e60-6027-44df-9bcf-8f8cfc7068bb",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_PIPELINE",
+      "details": "Executed end-to-end presales pipeline for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657782.717383
+    },
+    "8b11d1e4-05a6-42fb-a00d-bab642e4ec08": {
+      "id": "8b11d1e4-05a6-42fb-a00d-bab642e4ec08",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_ARCHITECT",
+      "details": "Generated cloud architecture for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657109.5623019
+    },
+    "32bc6b7d-b51f-4853-8231-84a4e26e304d": {
+      "id": "32bc6b7d-b51f-4853-8231-84a4e26e304d",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_ARCHITECT",
+      "details": "Generated cloud architecture for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657109.5623019
+    },
+    "71145850-4b9d-4581-bb2b-5b98adb6b433": {
+      "id": "71145850-4b9d-4581-bb2b-5b98adb6b433",
       "orgId": "mock-org-123",
       "user": "se@salespilot.ai",
       "action": "RUN_ARCHITECT",
@@ -934,24 +982,11 @@
     "463f8c4b-cb83-4670-b310-10c6c9a8ab44": {
       "projectId": "463f8c4b-cb83-4670-b310-10c6c9a8ab44",
       "originalCost": 1194.85,
-      "optimizedCost": 918.09,
-      "savings": 276.76,
-      "recommendation": "We successfully trimmed monthly billing from $1,194.85 to $918.09 (saving $276.76 monthly) by optimizing VM sizing, downscaling standard database replicas to single-region instances, and creating storage tier rotation rules. This solution maintains active core service metrics and meets your target budget constraints.",
+      "optimizedCost": 1194.85,
+      "savings": 0.0,
+      "recommendation": "We successfully trimmed monthly billing from \u20b91,194.85 to \u20b91,194.85 (saving \u20b90.00 monthly) by optimizing VM sizing, downscaling standard database replicas to single-region instances, and creating storage tier rotation rules. This solution maintains active core service metrics and meets your target budget constraints.",
       "tradeOffs": "The primary compromises involve single-region disaster recovery margins for the database (increased RPO/RTO) and small cold-start VM delays during off-peak weekend intervals.",
-      "modifications": [
-        {
-          "component": "Compute (VMs)",
-          "suggestion": "Resize standard compute nodes and apply VM Auto-Shutdown schedules during off-peak hours (10 PM to 6 AM).",
-          "savings": "$224.26/mo",
-          "tradeOff": "Slightly longer startup latency for developers working in night shifts."
-        },
-        {
-          "component": "Database Server",
-          "suggestion": "Shift from Multi-Region Geo-Replication to Single-Region LRS with periodic read-replicas.",
-          "savings": "$52.5/mo",
-          "tradeOff": "Increased Recovery Point Objective (RPO) from 5 minutes to 1 hour in region disaster."
-        }
-      ]
+      "modifications": []
     }
   },
   "failureSimulations": {

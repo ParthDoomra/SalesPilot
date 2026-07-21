@@ -63,9 +63,10 @@ class ArchitectAgent:
             if numbers:
                 try:
                     users = int(float(numbers[0].replace(",", "")))
-                    if "million" in users_val.lower() or "m" in users_val.lower():
+                    users_val_lower = users_val.lower()
+                    if "million" in users_val_lower or re.search(r'\b\d+\s*m\b', users_val_lower) or re.search(r'\b\d+m\b', users_val_lower):
                         users *= 1000000
-                    elif "k" in users_val.lower():
+                    elif "k" in users_val_lower or "thousand" in users_val_lower or re.search(r'\b\d+\s*k\b', users_val_lower) or re.search(r'\b\d+k\b', users_val_lower):
                         users *= 1000
                 except ValueError:
                     users = 5000

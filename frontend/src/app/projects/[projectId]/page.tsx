@@ -83,7 +83,7 @@ function CategoryAccordion({ title, score, items }: { title: string; score: numb
                   {item.filled ? (
                     typeof item.value === 'boolean' ? 'Enabled' :
                     Array.isArray(item.value) ? item.value.join(', ') :
-                    typeof item.value === 'number' ? `$${item.value.toLocaleString()}` :
+                    typeof item.value === 'number' ? `₹${item.value.toLocaleString()}` :
                     String(item.value)
                   ) : (
                     <span className="text-slate-700 italic font-normal">Missing</span>
@@ -113,6 +113,7 @@ export default function ProjectWorkspace() {
   const [pastedRequirements, setPastedRequirements] = useState('');
   const [projectName, setProjectName] = useState('');
   const [pipelineProgress, setPipelineProgress] = useState('');
+  const [missingInfoAnswers, setMissingInfoAnswers] = useState<Record<string, string>>({});
 
   // Conversational state variables
   const [requirements, setRequirements] = useState<any>(null);
@@ -416,6 +417,69 @@ Let's continue. What is your target timeline or timeline requirements for launch
     }
   };
 
+  const handleResolveMissingGaps = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const answersText = Object.entries(missingInfoAnswers)
+      .filter(([_, ans]) => ans.trim() !== '')
+      .map(([ques, ans]) => `- Resolved Missing Info: [${ques}] = ${ans}`)
+      .join('\n');
+      
+    if (!answersText) {
+      alert("Please fill in at least one clarification field to re-analyze.");
+      return;
+    }
+    
+    const updatedText = `${requirements.extractedText || pastedRequirements || ''}\n\n${answersText}`;
+    
+    setPipelineLoading("pipeline");
+    setPipelineProgress("Submitting resolved requirements...");
+    
+    const formData = new FormData();
+    formData.append("pasted_requirements", updatedText);
+    if (projectName) {
+      formData.append("projectName", projectName);
+    }
+    
+    const progressSteps = [
+      { delay: 1000, msg: "Reparsing unified specifications..." },
+      { delay: 2500, msg: "Regenerating Cloud Architecture topology..." },
+      { delay: 4500, msg: "Recalculating Infrastructure pricing BOM..." },
+      { delay: 6500, msg: "Re-optimizing FinOps budget alignment..." },
+      { delay: 8500, msg: "Re-compiling proposal slides & files..." },
+      { delay: 10000, msg: "Syncing solution workspace..." }
+    ];
+    
+    const timers = progressSteps.map(step => 
+      setTimeout(() => setPipelineProgress(step.msg), step.delay)
+    );
+
+    try {
+      const storedUser = localStorage.getItem("salespilot_mock_user");
+      const token = storedUser ? JSON.parse(storedUser).token : "";
+      
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/agents/pipeline/${projectId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      if (!res.ok) {
+        throw new Error("Re-analysis pipeline failed.");
+      }
+      
+      timers.forEach(clearTimeout);
+      setMissingInfoAnswers({});
+      await loadProject();
+      alert("Solution architecture and pricing recalculated with your inputs!");
+    } catch (err: any) {
+      timers.forEach(clearTimeout);
+      alert(err.message || "Failed to update specifications.");
+    } finally {
+      setPipelineLoading(null);
+      setPipelineProgress('');
+    }
+  };
+
   // Execute Architect Agent
   const runArchitect = async () => {
     setPipelineLoading("architect");
@@ -551,7 +615,7 @@ Let's continue. What is your target timeline or timeline requirements for launch
         {/* Status Indicators */}
         <div className="flex items-center gap-3">
           <div className="bg-slate-900 border border-slate-850 px-4 py-2 rounded-xl text-xs font-bold text-slate-300">
-            Budget Cap: <span className="text-slate-50">${project.budget.toLocaleString()}/mo</span>
+            Budget Cap: <span className="text-slate-50">₹{project.budget.toLocaleString()}/mo</span>
           </div>
           <span className={`
             px-3 py-1.5 rounded-full text-xs font-bold
@@ -767,16 +831,33 @@ Let's continue. What is your target timeline or timeline requirements for launch
 
                 {/* Sizing indicators card */}
                 {requirements.missingInformation && requirements.missingInformation.length > 0 && (
-                  <div className="bg-amber-950/10 border border-amber-900/30 rounded-2xl p-4 shadow-inner space-y-3">
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <div className="bg-amber-950/10 border border-amber-900/30 rounded-2xl p-4 shadow-inner space-y-4">
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5 border-b border-amber-900/20 pb-2">
                       <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                      <span>Missing Details ({requirements.missingInformation.length})</span>
+                      <span>Resolve Missing Gaps ({requirements.missingInformation.length})</span>
                     </h4>
-                    <ul className="space-y-1.5 text-[11px] text-amber-300/80 leading-relaxed list-disc list-inside">
+                    <form onSubmit={handleResolveMissingGaps} className="space-y-3">
                       {requirements.missingInformation.map((m: string, idx: number) => (
-                        <li key={idx} className="truncate-2-lines">{m}</li>
+                        <div key={idx} className="space-y-1">
+                          <label className="block text-[10px] text-amber-400/80 leading-relaxed font-semibold">{m}</label>
+                          <input
+                            type="text"
+                            value={missingInfoAnswers[m] || ''}
+                            onChange={(e) => setMissingInfoAnswers(prev => ({ ...prev, [m]: e.target.value }))}
+                            placeholder="Provide details..."
+                            className="w-full bg-slate-950/60 border border-amber-900/20 rounded-lg p-2 text-xs text-slate-200 outline-none focus:border-amber-500/50"
+                          />
+                        </div>
                       ))}
-                    </ul>
+                      <button
+                        type="submit"
+                        disabled={pipelineLoading === "pipeline"}
+                        className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-1 uppercase tracking-wider"
+                      >
+                        <span>Submit & Re-Analyze</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </form>
                   </div>
                 )}
 
@@ -966,12 +1047,12 @@ Let's continue. What is your target timeline or timeline requirements for launch
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-900/40 border border-slate-800/80 p-5 rounded-2xl shadow-inner">
                     <div className="text-slate-500 text-xxs font-bold uppercase tracking-wider mb-2">Monthly Cost Total</div>
-                    <div className="text-3xl font-extrabold text-cyan-400">${monthlyTotal.toLocaleString()}</div>
+                    <div className="text-3xl font-extrabold text-cyan-400">₹{monthlyTotal.toLocaleString()}</div>
                     <div className="text-[10px] text-slate-500 mt-2 font-medium">Billed dynamically on Azure Consumption</div>
                   </div>
                   <div className="bg-slate-900/40 border border-slate-800/80 p-5 rounded-2xl shadow-inner">
                     <div className="text-slate-500 text-xxs font-bold uppercase tracking-wider mb-2">Annualized Cost Total</div>
-                    <div className="text-3xl font-extrabold text-slate-50">${annualTotal.toLocaleString()}</div>
+                    <div className="text-3xl font-extrabold text-slate-50">₹{annualTotal.toLocaleString()}</div>
                     <div className="text-[10px] text-slate-500 mt-2 font-medium">Estimated monthly billing * 12</div>
                   </div>
                 </div>
@@ -990,7 +1071,7 @@ Let's continue. What is your target timeline or timeline requirements for launch
                       {Object.entries(costBreakdown).map(([cat, val]: any) => (
                         <tr key={cat}>
                           <td className="py-3 px-2 font-bold capitalize text-slate-300">{cat}</td>
-                          <td className="py-3 px-2 text-right font-semibold text-slate-100">${val.toLocaleString()}</td>
+                          <td className="py-3 px-2 text-right font-semibold text-slate-100">₹{val.toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1037,7 +1118,7 @@ Let's continue. What is your target timeline or timeline requirements for launch
                         <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
                         <span>{item.name}</span>
                       </div>
-                      <span className="font-semibold text-slate-200">${item.value.toLocaleString()}</span>
+                      <span className="font-semibold text-slate-200">₹{item.value.toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
@@ -1080,17 +1161,17 @@ Let's continue. What is your target timeline or timeline requirements for launch
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-slate-900/40 border border-slate-800/85 p-5 rounded-2xl">
                   <span className="text-slate-500 text-xxs font-bold uppercase tracking-wider block mb-1">Original Invoice Cost</span>
-                  <span className="text-xl font-extrabold text-slate-400">${project.negotiation.originalCost}/mo</span>
+                  <span className="text-xl font-extrabold text-slate-400">₹{project.negotiation.originalCost}/mo</span>
                 </div>
                 <div className="bg-cyan-500/5 border border-cyan-500/10 p-5 rounded-2xl relative">
                   <div className="absolute inset-0 bg-cyan-500/[0.02] blur-sm rounded-2xl"></div>
                   <span className="text-cyan-400 text-xxs font-bold uppercase tracking-wider block mb-1 relative z-10">Optimized Solutions Cost</span>
-                  <span className="text-xl font-extrabold text-cyan-400 relative z-10">${project.negotiation.optimizedCost}/mo</span>
+                  <span className="text-xl font-extrabold text-cyan-400 relative z-10">₹{project.negotiation.optimizedCost}/mo</span>
                 </div>
                 <div className="bg-green-500/5 border border-green-500/10 p-5 rounded-2xl relative">
                   <div className="absolute inset-0 bg-green-500/[0.02] blur-sm rounded-2xl"></div>
                   <span className="text-green-400 text-xxs font-bold uppercase tracking-wider block mb-1 relative z-10">Net Monthly Savings</span>
-                  <span className="text-xl font-extrabold text-green-400 relative z-10">${project.negotiation.savings}/mo</span>
+                  <span className="text-xl font-extrabold text-green-400 relative z-10">₹{project.negotiation.savings}/mo</span>
                 </div>
               </div>
 

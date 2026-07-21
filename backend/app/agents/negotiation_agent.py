@@ -11,15 +11,15 @@ SYSTEM_PROMPT = """You are SalesPilot AI, a Senior Cloud Financial Engineer (Fin
 Your task is to optimize the provided cloud architecture to fit the client's monthly budget.
 Analyze the original tech stack and pricing breakdown.
 You must output a single JSON document containing:
-1. "originalCost": Total monthly cost originally calculated
-2. "optimizedCost": Total optimized monthly cost fitting or approaching the budget
-3. "savings": Original - Optimized
-4. "recommendation": A detailed strategic guidance message explaining the core savings strategy
+1. "originalCost": Total monthly cost originally calculated (in INR)
+2. "optimizedCost": Total optimized monthly cost fitting or approaching the budget (in INR)
+3. "savings": Original - Optimized (in INR)
+4. "recommendation": A detailed strategic guidance message explaining the core savings strategy (formatting amounts in Indian Rupees ₹)
 5. "tradeOffs": Main technical trade-offs (e.g. reduced redundancy, SLA changes)
 6. "modifications": A list of items representing exact resource changes:
    - "component": The tier affected (e.g. "Compute", "Database", "Storage")
    - "suggestion": Description of change (e.g. "Resize VM to Standard_B2s, configure scheduling")
-   - "savings": Estimated monthly savings in USD
+   - "savings": Estimated monthly savings in INR formatted with ₹ symbol (e.g. "₹2,500/mo")
    - "tradeOff": Specific downside or impact on SLA
 
 Keep your response strictly as valid JSON, with no other text.
@@ -39,12 +39,12 @@ class NegotiationAgent:
 
         try:
             prompt = f"""
-            Client Monthly Budget: ${budget}
-            Original Total Monthly Cost: ${original_cost}
+            Client Monthly Budget (INR): ₹{budget}
+            Original Total Monthly Cost (INR): ₹{original_cost}
             Tech Stack Details: {json.dumps(tech_stack)}
             Pricing Breakdown: {json.dumps(pricing_breakdown)}
             
-            Find optimizations to bring this cost closer to the budget. Ensure the optimizations are realistic.
+            Find optimizations to bring this cost closer to the budget. Format all amounts in Indian Rupees (₹). Ensure the optimizations are realistic.
             """
             message = await self.client.messages.create(
                 model="claude-3-5-sonnet-20241022",
@@ -64,36 +64,36 @@ class NegotiationAgent:
         
         # Calculate possible compute savings (simulate VM resizing or scheduling)
         comp_cost = pricing_breakdown.get("compute", 0.0)
-        if comp_cost > 30.0:
+        if comp_cost > 2000.0:
             comp_saved = round(comp_cost * 0.4, 2)
             modifications.append({
                 "component": "Compute (VMs)",
                 "suggestion": "Resize standard compute nodes and apply VM Auto-Shutdown schedules during off-peak hours (10 PM to 6 AM).",
-                "savings": f"${comp_saved}/mo",
+                "savings": f"₹{comp_saved:,.2f}/mo",
                 "tradeOff": "Slightly longer startup latency for developers working in night shifts."
             })
             target_cost -= comp_saved
 
         # Calculate database savings (SLA downgrade)
         db_cost = pricing_breakdown.get("database", 0.0)
-        if db_cost > 20.0:
+        if db_cost > 1500.0:
             db_saved = round(db_cost * 0.35, 2)
             modifications.append({
                 "component": "Database Server",
                 "suggestion": "Shift from Multi-Region Geo-Replication to Single-Region LRS with periodic read-replicas.",
-                "savings": f"${db_saved}/mo",
+                "savings": f"₹{db_saved:,.2f}/mo",
                 "tradeOff": "Increased Recovery Point Objective (RPO) from 5 minutes to 1 hour in region disaster."
             })
             target_cost -= db_saved
 
         # Storage savings (Hot to Cool storage rules)
         st_cost = pricing_breakdown.get("storage", 0.0)
-        if st_cost > 5.0:
+        if st_cost > 400.0:
             st_saved = round(st_cost * 0.3, 2)
             modifications.append({
                 "component": "Blob Storage",
                 "suggestion": "Configure Firestore/Storage lifecycle rule to transition assets older than 30 days to Cool storage tier.",
-                "savings": f"${st_saved}/mo",
+                "savings": f"₹{st_saved:,.2f}/mo",
                 "tradeOff": "Higher latency for retrieving archived media (up to a few seconds delay)."
             })
             target_cost -= st_saved
@@ -109,7 +109,7 @@ class NegotiationAgent:
             "originalCost": round(original_cost, 2),
             "optimizedCost": round(target_cost, 2),
             "savings": savings,
-            "recommendation": f"We successfully trimmed monthly billing from ${original_cost:,.2f} to ${target_cost:,.2f} (saving ${savings:,.2f} monthly) by optimizing VM sizing, downscaling standard database replicas to single-region instances, and creating storage tier rotation rules. This solution maintains active core service metrics and meets your target budget constraints.",
+            "recommendation": f"We successfully trimmed monthly billing from ₹{original_cost:,.2f} to ₹{target_cost:,.2f} (saving ₹{savings:,.2f} monthly) by optimizing VM sizing, downscaling standard database replicas to single-region instances, and creating storage tier rotation rules. This solution maintains active core service metrics and meets your target budget constraints.",
             "tradeOffs": "The primary compromises involve single-region disaster recovery margins for the database (increased RPO/RTO) and small cold-start VM delays during off-peak weekend intervals.",
             "modifications": modifications
         }

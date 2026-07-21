@@ -108,7 +108,7 @@ export default function Dashboard() {
             <span>Monthly Cost Savings</span>
             <DollarSign className="w-4 h-4 text-indigo-400" />
           </div>
-          <div className="text-3xl font-extrabold text-slate-50">${kpis.totalSavings.toLocaleString()}</div>
+          <div className="text-3xl font-extrabold text-slate-50">₹{kpis.totalSavings.toLocaleString()}</div>
           <div className="text-xxs text-slate-500 mt-2 font-medium">Saved via FinOps Negotiation</div>
         </div>
 
@@ -161,7 +161,7 @@ export default function Dashboard() {
                     <tr key={p.id} className="hover:bg-slate-900/20 transition-colors">
                       <td className="py-4 px-4 font-bold text-slate-200">{p.name}</td>
                       <td className="py-4 px-4 text-slate-400">{p.company}</td>
-                      <td className="py-4 px-4 text-slate-300 font-medium">${p.budget.toLocaleString()}</td>
+                      <td className="py-4 px-4 text-slate-300 font-medium">₹{p.budget.toLocaleString()}</td>
                       <td className="py-4 px-4"><span className="bg-slate-950 border border-slate-850 px-2.5 py-1 rounded text-xxs text-slate-400 font-bold">{p.preferredCloud}</span></td>
                       <td className="py-4 px-4">
                         <span className={`
@@ -227,7 +227,7 @@ export default function Dashboard() {
             {chartData.map((item, idx) => (
               <div key={item.name} className="flex items-center gap-1.5 text-slate-400">
                 <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                <span className="truncate">{item.name}: ${item.value.toLocaleString()}</span>
+                <span className="truncate">{item.name}: ₹{item.value.toLocaleString()}</span>
               </div>
             ))}
           </div>

@@ -321,7 +321,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-400 mb-1">Target Budget Cap (USD/mo)</label>
+                  <label className="block text-slate-400 mb-1">Target Budget Cap (INR/mo)</label>
                   <input 
                     type="number" 
                     value={budget} 
