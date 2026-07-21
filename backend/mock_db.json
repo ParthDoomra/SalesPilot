@@ -1,0 +1,1223 @@
+{
+  "users": {
+    "mock-admin-uid": {
+      "uid": "mock-admin-uid",
+      "email": "admin@salespilot.ai",
+      "displayName": "Admin User",
+      "orgId": "mock-org-123",
+      "role": "Admin"
+    },
+    "mock-se-uid": {
+      "uid": "mock-se-uid",
+      "email": "se@salespilot.ai",
+      "displayName": "Demo SE",
+      "orgId": "mock-org-123",
+      "role": "Sales Engineer"
+    }
+  },
+  "organizations": {
+    "mock-org-123": {
+      "id": "mock-org-123",
+      "name": "Acme IT Consulting",
+      "ownerId": "mock-admin-uid",
+      "tier": "Enterprise",
+      "activeCredits": 1000
+    }
+  },
+  "projects": {
+    "78e593e0-067b-4223-a544-0b76b69be9db": {
+      "id": "78e593e0-067b-4223-a544-0b76b69be9db",
+      "orgId": "mock-org-123",
+      "name": "Acme Corp Cloud Migration",
+      "clientName": "John Doe",
+      "company": "Acme Corp",
+      "industry": "Retail",
+      "country": "US",
+      "budget": 50000.0,
+      "timeline": "6 months",
+      "preferredCloud": "Azure",
+      "description": "Migrate core retail catalog database to cloud.",
+      "status": "Draft",
+      "createdAt": 1784654925.576759,
+      "updatedAt": 1784654925.57676,
+      "owner": "se@salespilot.ai"
+    },
+    "4f274b74-b6c2-4119-a75b-1bf510a615a9": {
+      "id": "4f274b74-b6c2-4119-a75b-1bf510a615a9",
+      "orgId": "mock-org-123",
+      "name": "SaaS Platform Launch",
+      "clientName": "Alice Retailer",
+      "company": "FastRetail Inc",
+      "industry": "Retail",
+      "country": "US",
+      "budget": 80000.0,
+      "timeline": "6 months",
+      "preferredCloud": "Azure",
+      "description": "Building an e-commerce platform for fast delivery.",
+      "status": "Draft",
+      "createdAt": 1784654948.332263,
+      "updatedAt": 1784656758.492417,
+      "owner": "se@salespilot.ai"
+    },
+    "90ecc23f-549b-4f36-b65c-90df87d37b02": {
+      "id": "90ecc23f-549b-4f36-b65c-90df87d37b02",
+      "orgId": "mock-org-123",
+      "name": "Paradise Immigration Solution Proposal",
+      "clientName": "Pranav",
+      "company": "Paradise Immigration",
+      "industry": "IT Services",
+      "country": "United States",
+      "budget": 150000.0,
+      "timeline": "6 months",
+      "preferredCloud": "Azure",
+      "description": "cloud services ",
+      "status": "Draft",
+      "createdAt": 1784655111.543308,
+      "updatedAt": 1784656553.972897,
+      "owner": "se@salespilot.ai"
+    },
+    "463f8c4b-cb83-4670-b310-10c6c9a8ab44": {
+      "id": "463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "orgId": "mock-org-123",
+      "name": "Bonne Perfumes Solution Proposal",
+      "clientName": "Parth Doomra",
+      "company": "Bonne Perfumes",
+      "industry": "IT Services",
+      "country": "United States",
+      "budget": 2000.0,
+      "timeline": "2 months",
+      "preferredCloud": "Azure",
+      "description": "Workspace Ingestion Solution",
+      "status": "Draft",
+      "createdAt": 1784657109.5623019,
+      "updatedAt": 1784657782.633394,
+      "owner": "se@salespilot.ai"
+    }
+  },
+  "requirements": {
+    "78e593e0-067b-4223-a544-0b76b69be9db": {
+      "industry": "Retail",
+      "preferredCloud": "Azure",
+      "budget": 50000.0,
+      "timeline": "6 months",
+      "businessGoal": "Migrate core retail catalog database to cloud.",
+      "confirmed": false
+    },
+    "4f274b74-b6c2-4119-a75b-1bf510a615a9": {
+      "industry": "Retail / E-Commerce",
+      "businessObjectives": [
+        "Increase online sales.",
+        "Improve customer experience.",
+        "Support future expansion across India."
+      ],
+      "functionalRequirements": [
+        "Browse products and search items.",
+        "Add products to a shopping cart and place orders.",
+        "Make online payments directly on the platform.",
+        "Track order deliveries in real time.",
+        "Admin dashboard for product management, inventory updates, and order management.",
+        "AI-powered product recommendations based on customer behavior."
+      ],
+      "nonFunctionalRequirements": [
+        "Responsive website and mobile applications (iOS/Android).",
+        "Handle significant traffic surges during festivals like Diwali and Black Friday (high scalability)."
+      ],
+      "securityRequirements": [
+        "Secure payment gateway integration.",
+        "Access control and authorization for the Admin dashboard."
+      ],
+      "complianceRequirements": [
+        "Data residency compliance for hosting inside India.",
+        "Standard transaction compliance for payment processing."
+      ],
+      "integrations": [
+        "Online payment gateway APIs.",
+        "AI recommendation engine.",
+        "Delivery tracking system integration."
+      ],
+      "budget": "Not specified",
+      "timeline": "Within 8 months",
+      "cloudPreference": "Any (No preference)",
+      "expectedUsers": "Approximately 100,000 registered users (20,000 daily visitors)",
+      "missingInformation": [
+        "Explicit budget limits for cloud hosting.",
+        "Specific security standards (e.g. Encryption at Rest details, network firewall specs).",
+        "Exact authentication protocol preference (e.g. OAuth2, SSO, Auth0).",
+        "Standard compliance targets (GDPR, SOC2, PCI-DSS) are not explicitly called out."
+      ],
+      "projectRisks": [
+        "High risk of database and compute overloading during Diwali/Black Friday sales spikes.",
+        "Tight 8-month timeline for delivering both a responsive web application and native iOS/Android mobile clients."
+      ],
+      "reportText": "# Requirement Analysis Report: Retail / E-Commerce Solution\n\n## 1. Project Specifications Summary\n* **Industry Vertical**: Retail / E-Commerce\n* **Preferred Cloud**: Any (No preference)\n* **Timeline Target**: Within 8 months\n* **Monthly Budget Cap**: Not specified\n* **Expected User Base**: Approximately 100,000 registered users (20,000 daily visitors)\n\n## 2. Business Objectives\n* Increase online sales.\n* Improve customer experience.\n* Support future expansion across India.\n\n## 3. Functional Requirements\n* Browse products and search items.\n* Add products to a shopping cart and place orders.\n* Make online payments directly on the platform.\n* Track order deliveries in real time.\n* Admin dashboard for product management, inventory updates, and order management.\n* AI-powered product recommendations based on customer behavior.\n\n## 4. Non-Functional Requirements\n* Responsive website and mobile applications (iOS/Android).\n* Handle significant traffic surges during festivals like Diwali and Black Friday (high scalability).\n\n## 5. Security & Compliance\n* **Security Requirements**:\n    - Secure payment gateway integration.\n  - Access control and authorization for the Admin dashboard.\n* **Compliance Standards**:\n    - Data residency compliance for hosting inside India.\n  - Standard transaction compliance for payment processing.\n\n## 6. Integrations & Interfaces\n* Online payment gateway APIs.\n* AI recommendation engine.\n* Delivery tracking system integration.\n\n## 7. Crucial Missing Information (To Be Resolved)\n> [!WARNING]\n> The following parameters were not defined in the source document and represent critical design gaps:\n* Explicit budget limits for cloud hosting.\n* Specific security standards (e.g. Encryption at Rest details, network firewall specs).\n* Exact authentication protocol preference (e.g. OAuth2, SSO, Auth0).\n* Standard compliance targets (GDPR, SOC2, PCI-DSS) are not explicitly called out.\n\n## 8. Presales Project Risks\n> [!CAUTION]\n* High risk of database and compute overloading during Diwali/Black Friday sales spikes.\n* Tight 8-month timeline for delivering both a responsive web application and native iOS/Android mobile clients.\n",
+      "extractedText": "Project Name:\r\nShopSphere\r\n\r\nCompany:\r\nShopSphere Pvt. Ltd.\r\n\r\nIndustry:\r\nRetail / E-Commerce\r\n\r\nProject Overview\r\n\r\nWe are planning to build a modern e-commerce platform that will allow customers to purchase electronics, fashion products, groceries, and home appliances online.\r\n\r\nThe platform should support a responsive website and mobile applications.\r\n\r\nCustomers should be able to browse products, search items, add products to a cart, place orders, make online payments, and track deliveries.\r\n\r\nAn admin dashboard should allow product management, inventory updates, order management, and customer support.\r\n\r\nThe company also wants AI-powered product recommendations based on customer behavior.\r\n\r\nBusiness Goal\r\n\r\nIncrease online sales.\r\nImprove customer experience.\r\nSupport future expansion across India.\r\n\r\nExpected Launch\r\n\r\nWithin 8 months.\r\n\r\nPreferred Cloud\r\n\r\nNo preference.\r\n\r\nExpected Users\r\n\r\nApproximately 100,000 registered users.\r\n\r\nExpected Daily Visitors\r\n\r\nAround 20,000.\r\n\r\nSpecial Notes\r\n\r\nTraffic is expected to increase significantly during festivals like Diwali and Black Friday.\r\n\r\nNo additional information has been finalized yet.",
+      "confirmed": true,
+      "updatedAt": 1784656758.4942431
+    },
+    "90ecc23f-549b-4f36-b65c-90df87d37b02": {
+      "industry": "Retail / E-Commerce",
+      "businessObjectives": [
+        "Increase online sales.",
+        "Improve customer experience.",
+        "Support future expansion across India."
+      ],
+      "functionalRequirements": [
+        "Browse products and search items.",
+        "Add products to a shopping cart and place orders.",
+        "Make online payments directly on the platform.",
+        "Track order deliveries in real time.",
+        "Admin dashboard for product management, inventory updates, and order management.",
+        "AI-powered product recommendations based on customer behavior."
+      ],
+      "nonFunctionalRequirements": [
+        "Responsive website and mobile applications (iOS/Android).",
+        "Handle significant traffic surges during festivals like Diwali and Black Friday (high scalability)."
+      ],
+      "securityRequirements": [
+        "Secure payment gateway integration.",
+        "Access control and authorization for the Admin dashboard."
+      ],
+      "complianceRequirements": [
+        "Data residency compliance for hosting inside India.",
+        "Standard transaction compliance for payment processing."
+      ],
+      "integrations": [
+        "Online payment gateway APIs.",
+        "AI recommendation engine.",
+        "Delivery tracking system integration."
+      ],
+      "budget": "Not specified",
+      "timeline": "Within 8 months",
+      "cloudPreference": "Any (No preference)",
+      "expectedUsers": "Approximately 100,000 registered users (20,000 daily visitors)",
+      "missingInformation": [
+        "Explicit budget limits for cloud hosting.",
+        "Specific security standards (e.g. Encryption at Rest details, network firewall specs).",
+        "Exact authentication protocol preference (e.g. OAuth2, SSO, Auth0).",
+        "Standard compliance targets (GDPR, SOC2, PCI-DSS) are not explicitly called out."
+      ],
+      "projectRisks": [
+        "High risk of database and compute overloading during Diwali/Black Friday sales spikes.",
+        "Tight 8-month timeline for delivering both a responsive web application and native iOS/Android mobile clients."
+      ],
+      "reportText": "# Requirement Analysis Report: Retail / E-Commerce Solution\n\n## 1. Project Specifications Summary\n* **Industry Vertical**: Retail / E-Commerce\n* **Preferred Cloud**: Any (No preference)\n* **Timeline Target**: Within 8 months\n* **Monthly Budget Cap**: Not specified\n* **Expected User Base**: Approximately 100,000 registered users (20,000 daily visitors)\n\n## 2. Business Objectives\n* Increase online sales.\n* Improve customer experience.\n* Support future expansion across India.\n\n## 3. Functional Requirements\n* Browse products and search items.\n* Add products to a shopping cart and place orders.\n* Make online payments directly on the platform.\n* Track order deliveries in real time.\n* Admin dashboard for product management, inventory updates, and order management.\n* AI-powered product recommendations based on customer behavior.\n\n## 4. Non-Functional Requirements\n* Responsive website and mobile applications (iOS/Android).\n* Handle significant traffic surges during festivals like Diwali and Black Friday (high scalability).\n\n## 5. Security & Compliance\n* **Security Requirements**:\n    - Secure payment gateway integration.\n  - Access control and authorization for the Admin dashboard.\n* **Compliance Standards**:\n    - Data residency compliance for hosting inside India.\n  - Standard transaction compliance for payment processing.\n\n## 6. Integrations & Interfaces\n* Online payment gateway APIs.\n* AI recommendation engine.\n* Delivery tracking system integration.\n\n## 7. Crucial Missing Information (To Be Resolved)\n> [!WARNING]\n> The following parameters were not defined in the source document and represent critical design gaps:\n* Explicit budget limits for cloud hosting.\n* Specific security standards (e.g. Encryption at Rest details, network firewall specs).\n* Exact authentication protocol preference (e.g. OAuth2, SSO, Auth0).\n* Standard compliance targets (GDPR, SOC2, PCI-DSS) are not explicitly called out.\n\n## 8. Presales Project Risks\n> [!CAUTION]\n* High risk of database and compute overloading during Diwali/Black Friday sales spikes.\n* Tight 8-month timeline for delivering both a responsive web application and native iOS/Android mobile clients.\n",
+      "extractedText": "Project Name:\r\nShopSphere\r\n\r\nCompany:\r\nShopSphere Pvt. Ltd.\r\n\r\nIndustry:\r\nRetail / E-Commerce\r\n\r\nProject Overview\r\n\r\nWe are planning to build a modern e-commerce platform that will allow customers to purchase electronics, fashion products, groceries, and home appliances online.\r\n\r\nThe platform should support a responsive website and mobile applications.\r\n\r\nCustomers should be able to browse products, search items, add products to a cart, place orders, make online payments, and track deliveries.\r\n\r\nAn admin dashboard should allow product management, inventory updates, order management, and customer support.\r\n\r\nThe company also wants AI-powered product recommendations based on customer behavior.\r\n\r\nBusiness Goal\r\n\r\nIncrease online sales.\r\nImprove customer experience.\r\nSupport future expansion across India.\r\n\r\nExpected Launch\r\n\r\nWithin 8 months.\r\n\r\nPreferred Cloud\r\n\r\nNo preference.\r\n\r\nExpected Users\r\n\r\nApproximately 100,000 registered users.\r\n\r\nExpected Daily Visitors\r\n\r\nAround 20,000.\r\n\r\nSpecial Notes\r\n\r\nTraffic is expected to increase significantly during festivals like Diwali and Black Friday.\r\n\r\nNo additional information has been finalized yet.",
+      "confirmed": true,
+      "updatedAt": 1784656553.978697
+    },
+    "463f8c4b-cb83-4670-b310-10c6c9a8ab44": {
+      "industry": "Retail",
+      "businessObjectives": [
+        "Implement cloud-enabled digital workflows for Retail services.",
+        "Optimize operational efficiencies and customer access channels."
+      ],
+      "functionalRequirements": [
+        "Core database management and search functionality.",
+        "User registration, login profiles, and access authorization.",
+        "API services layer to support clients and remote transactions."
+      ],
+      "nonFunctionalRequirements": [
+        "High availability uptime targeting 99.9% SLA.",
+        "Standard response latencies under 500ms."
+      ],
+      "securityRequirements": [
+        "Encryption of sensitive user credentials and data in transit.",
+        "Standard HTTPS endpoint certificates and API key authorization."
+      ],
+      "complianceRequirements": [
+        "General data protection guidelines.",
+        "SOC2 Audit alignment (best practice)."
+      ],
+      "integrations": [
+        "Database layer storage.",
+        "External email/notification API service."
+      ],
+      "budget": "$50,000 USD",
+      "timeline": "6 months",
+      "cloudPreference": "Any",
+      "expectedUsers": "50,000 expected users",
+      "missingInformation": [
+        "Specific hosting budget caps are undefined.",
+        "High availability and disaster recovery paired regions are not specified.",
+        "Authentication protocol choice (SSO, federated) is not detailed."
+      ],
+      "projectRisks": [
+        "Security vulnerability risks if standard SSO credentials aren't enforced.",
+        "Timeline constraints if custom legacy integrations are uncovered late."
+      ],
+      "reportText": "# Requirement Analysis Report: Retail Solution\n\n## 1. Project Specifications Summary\n* **Industry Vertical**: Retail\n* **Preferred Cloud**: Any\n* **Timeline Target**: 6 months\n* **Monthly Budget Cap**: $50,000 USD\n* **Expected User Base**: 50,000 expected users\n\n## 2. Business Objectives\n* Implement cloud-enabled digital workflows for Retail services.\n* Optimize operational efficiencies and customer access channels.\n\n## 3. Functional Requirements\n* Core database management and search functionality.\n* User registration, login profiles, and access authorization.\n* API services layer to support clients and remote transactions.\n\n## 4. Non-Functional Requirements\n* High availability uptime targeting 99.9% SLA.\n* Standard response latencies under 500ms.\n\n## 5. Security & Compliance\n* **Security Requirements**:\n    - Encryption of sensitive user credentials and data in transit.\n  - Standard HTTPS endpoint certificates and API key authorization.\n* **Compliance Standards**:\n    - General data protection guidelines.\n  - SOC2 Audit alignment (best practice).\n\n## 6. Integrations & Interfaces\n* Database layer storage.\n* External email/notification API service.\n\n## 7. Crucial Missing Information (To Be Resolved)\n> [!WARNING]\n> The following parameters were not defined in the source document and represent critical design gaps:\n* Specific hosting budget caps are undefined.\n* High availability and disaster recovery paired regions are not specified.\n* Authentication protocol choice (SSO, federated) is not detailed.\n\n## 8. Presales Project Risks\n> [!CAUTION]\n* Security vulnerability risks if standard SSO credentials aren't enforced.\n* Timeline constraints if custom legacy integrations are uncovered late.\n",
+      "extractedText": "============================================================\r\nPROJECT REQUIREMENT DOCUMENT\r\nBonne Perfumes\r\n============================================================\r\n\r\nProject Name:\r\nBonne Perfumes E-Commerce Platform\r\n\r\nCompany Name:\r\nBonne Perfumes\r\n\r\nIndustry:\r\nRetail / Fragrance & Cosmetics\r\n\r\nProject Overview\r\n\r\nBonne Perfumes is a premium fragrance brand planning to launch a modern e-commerce platform to sell perfumes directly to customers across India.\r\n\r\nThe objective is to create a fast, secure, and scalable online shopping experience that reflects the luxury identity of the brand while providing a seamless purchasing journey.\r\n\r\nThe platform should support both desktop and mobile users and allow customers to browse products, explore fragrance collections, purchase perfumes, and track their orders.\r\n\r\n------------------------------------------------------------\r\n\r\nBusiness Objectives\r\n\r\n\u2022 Increase direct online sales.\r\n\u2022 Expand the customer base across India.\r\n\u2022 Build brand awareness through a premium digital experience.\r\n\u2022 Reduce dependency on third-party marketplaces.\r\n\u2022 Support future international expansion.\r\n\r\n------------------------------------------------------------\r\n\r\nTarget Audience\r\n\r\n\u2022 Men\r\n\u2022 Women\r\n\u2022 Unisex fragrance buyers\r\n\u2022 Gift shoppers\r\n\u2022 Returning customers\r\n\r\n------------------------------------------------------------\r\n\r\nPlatforms\r\n\r\n\u2022 Responsive Web Application\r\n\u2022 Mobile-friendly experience\r\n\r\n------------------------------------------------------------\r\n\r\nCore Features\r\n\r\nCustomer Features\r\n\r\n\u2022 User Registration and Login\r\n\u2022 Guest Checkout\r\n\u2022 Product Catalog\r\n\u2022 Advanced Search\r\n\u2022 Filter by Brand, Fragrance Type, Price and Gender\r\n\u2022 Product Detail Pages\r\n\u2022 Wishlist\r\n\u2022 Shopping Cart\r\n\u2022 Secure Checkout\r\n\u2022 Order Tracking\r\n\u2022 Order History\r\n\u2022 Customer Profile Management\r\n\u2022 Product Reviews and Ratings\r\n\u2022 Recently Viewed Products\r\n\r\nAdmin Features\r\n\r\n\u2022 Product Management\r\n\u2022 Category Management\r\n\u2022 Inventory Management\r\n\u2022 Order Management\r\n\u2022 Customer Management\r\n\u2022 Coupon and Discount Management\r\n\u2022 Banner Management\r\n\u2022 Sales Analytics Dashboard\r\n\r\n------------------------------------------------------------\r\n\r\nAI Features\r\n\r\n\u2022 Personalized perfume recommendations\r\n\u2022 \"Customers also bought\" recommendations\r\n\u2022 Trending products\r\n\u2022 Personalized homepage\r\n\r\n------------------------------------------------------------\r\n\r\nIntegrations\r\n\r\n\u2022 Razorpay Payment Gateway\r\n\u2022 Delhivery Shipping API\r\n\u2022 Email Notifications\r\n\u2022 SMS Notifications\r\n\r\n------------------------------------------------------------\r\n\r\nPerformance Requirements\r\n\r\n\u2022 Support approximately 50,000 registered users.\r\n\u2022 Expected daily visitors: 8,000\u201310,000.\r\n\u2022 Peak traffic during festivals such as Diwali, Valentine's Day, and New Year sales.\r\n\u2022 Average page load time should be under 2 seconds.\r\n\u2022 System should support future growth without major redesign.\r\n\r\n------------------------------------------------------------\r\n\r\nSecurity Requirements\r\n\r\n\u2022 Secure user authentication.\r\n\u2022 Encrypted customer information.\r\n\u2022 Secure payment processing.\r\n\u2022 HTTPS across the platform.\r\n\u2022 Role-based access for administrators.\r\n\r\n------------------------------------------------------------\r\n\r\nNon-Functional Requirements\r\n\r\n\u2022 Responsive design.\r\n\u2022 High availability.\r\n\u2022 Fast page loading.\r\n\u2022 Scalable architecture.\r\n\u2022 Easy maintenance.\r\n\u2022 SEO optimized pages.\r\n\u2022 Reliable backup strategy.\r\n\r\n------------------------------------------------------------\r\n\r\nTimeline\r\n\r\nTarget launch:\r\n6 Months\r\n\r\n------------------------------------------------------------\r\n\r\nBudget\r\n\r\nEstimated Budget:\r\n\u20b935,00,000\r\n\r\n------------------------------------------------------------\r\n\r\nCloud Preference\r\n\r\nNo preference.\r\n\r\n------------------------------------------------------------\r\n\r\nExpected Deliverables\r\n\r\n\u2022 Complete e-commerce website\r\n\u2022 Admin dashboard\r\n\u2022 Secure backend APIs\r\n\u2022 Database\r\n\u2022 Deployment on cloud infrastructure\r\n\u2022 Monitoring and logging\r\n\u2022 Documentation\r\n\r\n============================================================\r\nEND OF DOCUMENT\r\n============================================================",
+      "confirmed": true,
+      "updatedAt": 1784657782.636456
+    }
+  },
+  "conversations": {
+    "78e593e0-067b-4223-a544-0b76b69be9db": {
+      "projectId": "78e593e0-067b-4223-a544-0b76b69be9db",
+      "history": [
+        {
+          "role": "assistant",
+          "content": "Hello! I am your Senior Business Analyst and Presales Architect. I've loaded your project details for **Acme Corp Cloud Migration** at **Acme Corp**.\n\nBased on the project initialization details, we have set the industry to **Retail**, preferred cloud to **Azure**, budget to **$50,000.00/mo**, and timeline to **6 months**.\n\nWho are your target users for this platform?"
+        }
+      ],
+      "updatedAt": 1784654925.576761
+    },
+    "4f274b74-b6c2-4119-a75b-1bf510a615a9": {
+      "projectId": "4f274b74-b6c2-4119-a75b-1bf510a615a9",
+      "history": [
+        {
+          "role": "assistant",
+          "content": "Hello! I am your Senior Business Analyst and Presales Architect. I've loaded your project details for **SaaS Platform Launch** at **FastRetail Inc**.\n\nBased on the project initialization details, we have set the industry to **Retail**, preferred cloud to **Azure**, budget to **$80,000.00/mo**, and timeline to **6 months**.\n\nWho are your target users for this platform?"
+        },
+        {
+          "role": "user",
+          "content": "We target Web and Android platforms."
+        },
+        {
+          "role": "assistant",
+          "content": "Approximately how many total expected users do you anticipate?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, we will definitely support online payments on the platform."
+        },
+        {
+          "role": "assistant",
+          "content": "Approximately how many total expected users do you anticipate?"
+        }
+      ],
+      "updatedAt": 1784654948.3585122
+    },
+    "90ecc23f-549b-4f36-b65c-90df87d37b02": {
+      "projectId": "90ecc23f-549b-4f36-b65c-90df87d37b02",
+      "history": [
+        {
+          "role": "assistant",
+          "content": "I will analyze your RFP document."
+        },
+        {
+          "role": "user",
+          "content": "Analyzed document abc.txt"
+        },
+        {
+          "role": "assistant",
+          "content": "I've analyzed your RFP file **abc.txt** and extracted initial requirements. You can see the details in the live sidebar. \n\nLet's continue. What is your target timeline or timeline requirements for launching this solution?"
+        },
+        {
+          "role": "user",
+          "content": "Uploaded RFP file: abc.txt"
+        },
+        {
+          "role": "assistant",
+          "content": "Who are your target users for this platform?"
+        },
+        {
+          "role": "user",
+          "content": "everyone"
+        },
+        {
+          "role": "assistant",
+          "content": "How many concurrent active users do you expect during peak hours?"
+        },
+        {
+          "role": "user",
+          "content": "2000"
+        },
+        {
+          "role": "assistant",
+          "content": "Do you need to integrate this app with an ERP system (like SAP, Oracle)?"
+        },
+        {
+          "role": "user",
+          "content": "yes"
+        },
+        {
+          "role": "assistant",
+          "content": "Do you need to integrate this app with an ERP system (like SAP, Oracle)?"
+        }
+      ],
+      "updatedAt": 1784655557.397278
+    },
+    "463f8c4b-cb83-4670-b310-10c6c9a8ab44": {
+      "projectId": "463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "history": [
+        {
+          "role": "assistant",
+          "content": "Hello! I am your Senior Business Analyst and Presales Architect. I've loaded your project details for **Bonne Perfumes Solution Proposal** at **Bonne Perfumes**.\n\nBased on the project initialization details, we have set the industry to **IT Services**, preferred cloud to **Azure**, budget to **$2,000.00/mo**, and timeline to **2 months**.\n\nWho are your target users for this platform?"
+        }
+      ],
+      "updatedAt": 1784657109.566028
+    }
+  },
+  "activityLogs": {
+    "2170b793-9e88-492c-80d8-1e09666aab3e": {
+      "id": "2170b793-9e88-492c-80d8-1e09666aab3e",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "CREATE_PROJECT",
+      "details": "Created project SaaS Platform Launch for FastRetail Inc",
+      "timestamp": 1784654948.333153
+    },
+    "37bf6793-27e4-41f3-ac68-0766cb306586": {
+      "id": "37bf6793-27e4-41f3-ac68-0766cb306586",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "CREATE_PROJECT",
+      "details": "Created project Paradise Immigration Solution Proposal for Paradise Immigration",
+      "timestamp": 1784655111.545596
+    },
+    "82d97da0-aad8-471b-bb51-4a228c8f5a91": {
+      "id": "82d97da0-aad8-471b-bb51-4a228c8f5a91",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_PIPELINE",
+      "details": "Executed end-to-end presales pipeline for project 90ecc23f-549b-4f36-b65c-90df87d37b02",
+      "timestamp": 1784656484.981094
+    },
+    "4af78092-7d63-4cbf-a320-74a8f75d8545": {
+      "id": "4af78092-7d63-4cbf-a320-74a8f75d8545",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_PIPELINE",
+      "details": "Executed end-to-end presales pipeline for project 90ecc23f-549b-4f36-b65c-90df87d37b02",
+      "timestamp": 1784656554.045738
+    },
+    "3cd7b741-c537-4dfa-bb65-6774f3510e7a": {
+      "id": "3cd7b741-c537-4dfa-bb65-6774f3510e7a",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_PIPELINE",
+      "details": "Executed end-to-end presales pipeline for project 4f274b74-b6c2-4119-a75b-1bf510a615a9",
+      "timestamp": 1784656758.5850391
+    },
+    "6cd755ad-a039-4d52-bba5-37019ca6fbd2": {
+      "id": "6cd755ad-a039-4d52-bba5-37019ca6fbd2",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "CREATE_PROJECT",
+      "details": "Created project Bonne Perfumes Solution Proposal for Bonne Perfumes",
+      "timestamp": 1784657109.567251
+    },
+    "c9d20ec6-6f82-4089-81bb-5e4c4d52b664": {
+      "id": "c9d20ec6-6f82-4089-81bb-5e4c4d52b664",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_PIPELINE",
+      "details": "Executed end-to-end presales pipeline for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657162.37445
+    },
+    "f9a92144-b691-470d-9aa2-61d3b2213db1": {
+      "id": "f9a92144-b691-470d-9aa2-61d3b2213db1",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_ARCHITECT",
+      "details": "Generated cloud architecture for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657109.5623019
+    },
+    "99cde36f-7bba-43d6-93bd-3c988ceb9cdd": {
+      "id": "99cde36f-7bba-43d6-93bd-3c988ceb9cdd",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_ARCHITECT",
+      "details": "Generated cloud architecture for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657109.5623019
+    },
+    "8a3b5b5c-ea98-4869-a278-19a47aa666dc": {
+      "id": "8a3b5b5c-ea98-4869-a278-19a47aa666dc",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_ARCHITECT",
+      "details": "Generated cloud architecture for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657109.5623019
+    },
+    "99b93e89-8760-471d-a227-5035bd07e467": {
+      "id": "99b93e89-8760-471d-a227-5035bd07e467",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_PIPELINE",
+      "details": "Executed end-to-end presales pipeline for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657744.9065979
+    },
+    "068b6e60-6027-44df-9bcf-8f8cfc7068bb": {
+      "id": "068b6e60-6027-44df-9bcf-8f8cfc7068bb",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_PIPELINE",
+      "details": "Executed end-to-end presales pipeline for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657782.717383
+    },
+    "8b11d1e4-05a6-42fb-a00d-bab642e4ec08": {
+      "id": "8b11d1e4-05a6-42fb-a00d-bab642e4ec08",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_ARCHITECT",
+      "details": "Generated cloud architecture for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657109.5623019
+    },
+    "32bc6b7d-b51f-4853-8231-84a4e26e304d": {
+      "id": "32bc6b7d-b51f-4853-8231-84a4e26e304d",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_ARCHITECT",
+      "details": "Generated cloud architecture for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657109.5623019
+    },
+    "71145850-4b9d-4581-bb2b-5b98adb6b433": {
+      "id": "71145850-4b9d-4581-bb2b-5b98adb6b433",
+      "orgId": "mock-org-123",
+      "user": "se@salespilot.ai",
+      "action": "RUN_ARCHITECT",
+      "details": "Generated cloud architecture for project 463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "timestamp": 1784657109.5623019
+    }
+  },
+  "architectures": {
+    "90ecc23f-549b-4f36-b65c-90df87d37b02": {
+      "techStack": {
+        "frontend": {
+          "service": "GCP S3 + CloudFront CDN",
+          "rationale": "Enables lightning-fast page loading with Server-Side Rendering (SSR) and edge deployment."
+        },
+        "backend": {
+          "service": "Google Cloud Run",
+          "rationale": "Stateless container hosting with auto-scaling to absorb peak request traffic seamlessly."
+        },
+        "database": {
+          "service": "Google Cloud SQL",
+          "rationale": "ACID compliance for critical transactions, with built-in point-in-time backups."
+        },
+        "authentication": {
+          "service": "Firebase Authentication",
+          "rationale": "Enterprise-grade federated identity management, multi-factor login support, and seamless scaling."
+        },
+        "apiGateway": {
+          "service": "GCP API Gateway",
+          "rationale": "Unified entry point for API routing, SSL termination, and rate-limiting enforcement."
+        },
+        "cache": {
+          "service": "Cloud Memorystore",
+          "rationale": "Sub-millisecond latency caching for hot session data and frequent database read queries."
+        },
+        "queue": {
+          "service": "GCP Service Bus / SQS / PubSub",
+          "rationale": "Decouples backend components, managing spikes in asynchronous file or image tasks."
+        },
+        "cdn": {
+          "service": "GCP Front Door / CloudFront / Cloud CDN",
+          "rationale": "Global edge network acceleration, protecting against DDoS and reducing load latency."
+        },
+        "monitoring": {
+          "service": "AWS CloudWatch + X-Ray",
+          "rationale": "Comprehensive application performance monitoring (APM), telemetry dashboards, and alerts."
+        },
+        "cicd": {
+          "service": "GitHub Actions Enterprise",
+          "rationale": "Automated pipelines ensuring continuous linting, building, test running, and blue-green deployments."
+        },
+        "deployment": {
+          "service": "Infrastructure as Code (IaC) via Terraform",
+          "rationale": "Declarative multi-environment infrastructure tracking, eliminating environment drift."
+        }
+      },
+      "pricingSpec": {
+        "compute": {
+          "sku": "standard_d4s_v3",
+          "quantity": 4
+        },
+        "database": {
+          "sku": "azure_sql_standard_s3",
+          "quantity": 1
+        },
+        "storage_gb": 100,
+        "network_egress_gb": 10000000000,
+        "cache": {
+          "sku": "redis_basic_c0",
+          "quantity": 2
+        },
+        "ai_credits_estimate": 1000000
+      },
+      "diagramMetadata": {
+        "nodes": [
+          {
+            "id": "client",
+            "type": "input",
+            "label": "Client Browser (Next.js)"
+          },
+          {
+            "id": "cdn",
+            "type": "default",
+            "label": "Global CDN / WAF"
+          },
+          {
+            "id": "gateway",
+            "type": "default",
+            "label": "API Gateway"
+          },
+          {
+            "id": "backend",
+            "type": "default",
+            "label": "Backend API Containers"
+          },
+          {
+            "id": "cache",
+            "type": "default",
+            "label": "Redis Cache Server"
+          },
+          {
+            "id": "db",
+            "type": "output",
+            "label": "Primary Database Server"
+          },
+          {
+            "id": "storage",
+            "type": "output",
+            "label": "Blob Storage Bucket"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "client",
+            "target": "cdn",
+            "animated": true
+          },
+          {
+            "id": "e2",
+            "source": "cdn",
+            "target": "gateway",
+            "animated": true
+          },
+          {
+            "id": "e3",
+            "source": "gateway",
+            "target": "backend",
+            "animated": true
+          },
+          {
+            "id": "e4",
+            "source": "backend",
+            "target": "cache"
+          },
+          {
+            "id": "e5",
+            "source": "backend",
+            "target": "db"
+          },
+          {
+            "id": "e6",
+            "source": "backend",
+            "target": "storage"
+          }
+        ]
+      }
+    },
+    "4f274b74-b6c2-4119-a75b-1bf510a615a9": {
+      "techStack": {
+        "frontend": {
+          "service": "GCP S3 + CloudFront CDN",
+          "rationale": "Enables lightning-fast page loading with Server-Side Rendering (SSR) and edge deployment."
+        },
+        "backend": {
+          "service": "Google Cloud Run",
+          "rationale": "Stateless container hosting with auto-scaling to absorb peak request traffic seamlessly."
+        },
+        "database": {
+          "service": "Google Cloud SQL",
+          "rationale": "ACID compliance for critical transactions, with built-in point-in-time backups."
+        },
+        "authentication": {
+          "service": "Firebase Authentication",
+          "rationale": "Enterprise-grade federated identity management, multi-factor login support, and seamless scaling."
+        },
+        "apiGateway": {
+          "service": "GCP API Gateway",
+          "rationale": "Unified entry point for API routing, SSL termination, and rate-limiting enforcement."
+        },
+        "cache": {
+          "service": "Cloud Memorystore",
+          "rationale": "Sub-millisecond latency caching for hot session data and frequent database read queries."
+        },
+        "queue": {
+          "service": "GCP Service Bus / SQS / PubSub",
+          "rationale": "Decouples backend components, managing spikes in asynchronous file or image tasks."
+        },
+        "cdn": {
+          "service": "GCP Front Door / CloudFront / Cloud CDN",
+          "rationale": "Global edge network acceleration, protecting against DDoS and reducing load latency."
+        },
+        "monitoring": {
+          "service": "AWS CloudWatch + X-Ray",
+          "rationale": "Comprehensive application performance monitoring (APM), telemetry dashboards, and alerts."
+        },
+        "cicd": {
+          "service": "GitHub Actions Enterprise",
+          "rationale": "Automated pipelines ensuring continuous linting, building, test running, and blue-green deployments."
+        },
+        "deployment": {
+          "service": "Infrastructure as Code (IaC) via Terraform",
+          "rationale": "Declarative multi-environment infrastructure tracking, eliminating environment drift."
+        }
+      },
+      "pricingSpec": {
+        "compute": {
+          "sku": "standard_d4s_v3",
+          "quantity": 4
+        },
+        "database": {
+          "sku": "azure_sql_standard_s3",
+          "quantity": 1
+        },
+        "storage_gb": 100,
+        "network_egress_gb": 10000000000,
+        "cache": {
+          "sku": "redis_basic_c0",
+          "quantity": 2
+        },
+        "ai_credits_estimate": 1000000
+      },
+      "diagramMetadata": {
+        "nodes": [
+          {
+            "id": "client",
+            "type": "input",
+            "label": "Client Browser (Next.js)"
+          },
+          {
+            "id": "cdn",
+            "type": "default",
+            "label": "Global CDN / WAF"
+          },
+          {
+            "id": "gateway",
+            "type": "default",
+            "label": "API Gateway"
+          },
+          {
+            "id": "backend",
+            "type": "default",
+            "label": "Backend API Containers"
+          },
+          {
+            "id": "cache",
+            "type": "default",
+            "label": "Redis Cache Server"
+          },
+          {
+            "id": "db",
+            "type": "output",
+            "label": "Primary Database Server"
+          },
+          {
+            "id": "storage",
+            "type": "output",
+            "label": "Blob Storage Bucket"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "client",
+            "target": "cdn",
+            "animated": true
+          },
+          {
+            "id": "e2",
+            "source": "cdn",
+            "target": "gateway",
+            "animated": true
+          },
+          {
+            "id": "e3",
+            "source": "gateway",
+            "target": "backend",
+            "animated": true
+          },
+          {
+            "id": "e4",
+            "source": "backend",
+            "target": "cache"
+          },
+          {
+            "id": "e5",
+            "source": "backend",
+            "target": "db"
+          },
+          {
+            "id": "e6",
+            "source": "backend",
+            "target": "storage"
+          }
+        ]
+      }
+    },
+    "463f8c4b-cb83-4670-b310-10c6c9a8ab44": {
+      "techStack": {
+        "frontend": {
+          "service": "GCP S3 + CloudFront CDN",
+          "rationale": "Enables lightning-fast page loading with Server-Side Rendering (SSR) and edge deployment."
+        },
+        "backend": {
+          "service": "Google Cloud Run",
+          "rationale": "Stateless container hosting with auto-scaling to absorb peak request traffic seamlessly."
+        },
+        "database": {
+          "service": "Google Cloud SQL",
+          "rationale": "ACID compliance for critical transactions, with built-in point-in-time backups."
+        },
+        "authentication": {
+          "service": "Firebase Authentication",
+          "rationale": "Enterprise-grade federated identity management, multi-factor login support, and seamless scaling."
+        },
+        "apiGateway": {
+          "service": "GCP API Gateway",
+          "rationale": "Unified entry point for API routing, SSL termination, and rate-limiting enforcement."
+        },
+        "cache": {
+          "service": "Cloud Memorystore",
+          "rationale": "Sub-millisecond latency caching for hot session data and frequent database read queries."
+        },
+        "queue": {
+          "service": "GCP Service Bus / SQS / PubSub",
+          "rationale": "Decouples backend components, managing spikes in asynchronous file or image tasks."
+        },
+        "cdn": {
+          "service": "GCP Front Door / CloudFront / Cloud CDN",
+          "rationale": "Global edge network acceleration, protecting against DDoS and reducing load latency."
+        },
+        "monitoring": {
+          "service": "AWS CloudWatch + X-Ray",
+          "rationale": "Comprehensive application performance monitoring (APM), telemetry dashboards, and alerts."
+        },
+        "cicd": {
+          "service": "GitHub Actions Enterprise",
+          "rationale": "Automated pipelines ensuring continuous linting, building, test running, and blue-green deployments."
+        },
+        "deployment": {
+          "service": "Infrastructure as Code (IaC) via Terraform",
+          "rationale": "Declarative multi-environment infrastructure tracking, eliminating environment drift."
+        }
+      },
+      "pricingSpec": {
+        "compute": {
+          "sku": "standard_d4s_v3",
+          "quantity": 4
+        },
+        "database": {
+          "sku": "azure_sql_standard_s3",
+          "quantity": 1
+        },
+        "storage_gb": 100,
+        "network_egress_gb": 5000,
+        "cache": {
+          "sku": "redis_basic_c0",
+          "quantity": 2
+        },
+        "ai_credits_estimate": 1000000
+      },
+      "diagramMetadata": {
+        "nodes": [
+          {
+            "id": "client",
+            "type": "input",
+            "label": "Client Browser (Next.js)"
+          },
+          {
+            "id": "cdn",
+            "type": "default",
+            "label": "Global CDN / WAF"
+          },
+          {
+            "id": "gateway",
+            "type": "default",
+            "label": "API Gateway"
+          },
+          {
+            "id": "backend",
+            "type": "default",
+            "label": "Backend API Containers"
+          },
+          {
+            "id": "cache",
+            "type": "default",
+            "label": "Redis Cache Server"
+          },
+          {
+            "id": "db",
+            "type": "output",
+            "label": "Primary Database Server"
+          },
+          {
+            "id": "storage",
+            "type": "output",
+            "label": "Blob Storage Bucket"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "client",
+            "target": "cdn",
+            "animated": true
+          },
+          {
+            "id": "e2",
+            "source": "cdn",
+            "target": "gateway",
+            "animated": true
+          },
+          {
+            "id": "e3",
+            "source": "gateway",
+            "target": "backend",
+            "animated": true
+          },
+          {
+            "id": "e4",
+            "source": "backend",
+            "target": "cache"
+          },
+          {
+            "id": "e5",
+            "source": "backend",
+            "target": "db"
+          },
+          {
+            "id": "e6",
+            "source": "backend",
+            "target": "storage"
+          }
+        ]
+      }
+    }
+  },
+  "pricingReports": {
+    "90ecc23f-549b-4f36-b65c-90df87d37b02": {
+      "projectId": "90ecc23f-549b-4f36-b65c-90df87d37b02",
+      "breakdown": {
+        "compute": 560.64,
+        "database": 150.0,
+        "storage": 1.84,
+        "networking": 870000000.0,
+        "cache": 32.0,
+        "backup": 0.37,
+        "ai": 15.0
+      },
+      "monthlyTotal": 870000759.85,
+      "annualTotal": 10440009118.18
+    },
+    "4f274b74-b6c2-4119-a75b-1bf510a615a9": {
+      "projectId": "4f274b74-b6c2-4119-a75b-1bf510a615a9",
+      "breakdown": {
+        "compute": 560.64,
+        "database": 150.0,
+        "storage": 1.84,
+        "networking": 870000000.0,
+        "cache": 32.0,
+        "backup": 0.37,
+        "ai": 15.0
+      },
+      "monthlyTotal": 870000759.85,
+      "annualTotal": 10440009118.18
+    },
+    "463f8c4b-cb83-4670-b310-10c6c9a8ab44": {
+      "projectId": "463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "breakdown": {
+        "compute": 560.64,
+        "database": 150.0,
+        "storage": 1.84,
+        "networking": 435.0,
+        "cache": 32.0,
+        "backup": 0.37,
+        "ai": 15.0
+      },
+      "monthlyTotal": 1194.85,
+      "annualTotal": 14338.18
+    }
+  },
+  "negotiations": {
+    "90ecc23f-549b-4f36-b65c-90df87d37b02": {
+      "projectId": "90ecc23f-549b-4f36-b65c-90df87d37b02",
+      "originalCost": 870000759.85,
+      "optimizedCost": 870000483.09,
+      "savings": 276.76,
+      "recommendation": "We successfully trimmed monthly billing from $870,000,759.85 to $870,000,483.09 (saving $276.76 monthly) by optimizing VM sizing, downscaling standard database replicas to single-region instances, and creating storage tier rotation rules. This solution maintains active core service metrics and meets your target budget constraints.",
+      "tradeOffs": "The primary compromises involve single-region disaster recovery margins for the database (increased RPO/RTO) and small cold-start VM delays during off-peak weekend intervals.",
+      "modifications": [
+        {
+          "component": "Compute (VMs)",
+          "suggestion": "Resize standard compute nodes and apply VM Auto-Shutdown schedules during off-peak hours (10 PM to 6 AM).",
+          "savings": "$224.26/mo",
+          "tradeOff": "Slightly longer startup latency for developers working in night shifts."
+        },
+        {
+          "component": "Database Server",
+          "suggestion": "Shift from Multi-Region Geo-Replication to Single-Region LRS with periodic read-replicas.",
+          "savings": "$52.5/mo",
+          "tradeOff": "Increased Recovery Point Objective (RPO) from 5 minutes to 1 hour in region disaster."
+        }
+      ]
+    },
+    "4f274b74-b6c2-4119-a75b-1bf510a615a9": {
+      "projectId": "4f274b74-b6c2-4119-a75b-1bf510a615a9",
+      "originalCost": 870000759.85,
+      "optimizedCost": 870000483.09,
+      "savings": 276.76,
+      "recommendation": "We successfully trimmed monthly billing from $870,000,759.85 to $870,000,483.09 (saving $276.76 monthly) by optimizing VM sizing, downscaling standard database replicas to single-region instances, and creating storage tier rotation rules. This solution maintains active core service metrics and meets your target budget constraints.",
+      "tradeOffs": "The primary compromises involve single-region disaster recovery margins for the database (increased RPO/RTO) and small cold-start VM delays during off-peak weekend intervals.",
+      "modifications": [
+        {
+          "component": "Compute (VMs)",
+          "suggestion": "Resize standard compute nodes and apply VM Auto-Shutdown schedules during off-peak hours (10 PM to 6 AM).",
+          "savings": "$224.26/mo",
+          "tradeOff": "Slightly longer startup latency for developers working in night shifts."
+        },
+        {
+          "component": "Database Server",
+          "suggestion": "Shift from Multi-Region Geo-Replication to Single-Region LRS with periodic read-replicas.",
+          "savings": "$52.5/mo",
+          "tradeOff": "Increased Recovery Point Objective (RPO) from 5 minutes to 1 hour in region disaster."
+        }
+      ]
+    },
+    "463f8c4b-cb83-4670-b310-10c6c9a8ab44": {
+      "projectId": "463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "originalCost": 1194.85,
+      "optimizedCost": 1194.85,
+      "savings": 0.0,
+      "recommendation": "We successfully trimmed monthly billing from \u20b91,194.85 to \u20b91,194.85 (saving \u20b90.00 monthly) by optimizing VM sizing, downscaling standard database replicas to single-region instances, and creating storage tier rotation rules. This solution maintains active core service metrics and meets your target budget constraints.",
+      "tradeOffs": "The primary compromises involve single-region disaster recovery margins for the database (increased RPO/RTO) and small cold-start VM delays during off-peak weekend intervals.",
+      "modifications": []
+    }
+  },
+  "failureSimulations": {
+    "90ecc23f-549b-4f36-b65c-90df87d37b02": {
+      "projectId": "90ecc23f-549b-4f36-b65c-90df87d37b02",
+      "score": 85,
+      "risks": [
+        "Slight cross-region replication latency",
+        "Missing multi-zone compute redundancy if VM scale set is single-region",
+        "Slow data sync during peak cache misses"
+      ],
+      "scenarios": [
+        {
+          "name": "Azure Region Failure",
+          "impact": "Complete service blackout for all region-bound clients.",
+          "rto": "4 hours",
+          "rpo": "1 hour",
+          "recoveryCost": "$500 (Traffic DNS failover)",
+          "riskLevel": "High",
+          "recoveryPlan": "Trigger automatic DNS failover in Azure Front Door to secondary paired region. Re-route database connection strings to the read-replica."
+        },
+        {
+          "name": "Database Failure / Corruption",
+          "impact": "Core write operations halt, leading to partial service outage.",
+          "rto": "10 minutes",
+          "rpo": "1 minute",
+          "recoveryCost": "$300 (Restore tasks)",
+          "riskLevel": "Medium",
+          "recoveryPlan": "Initiate automated Point-in-Time Restore (PITR) to restore database state immediately prior to corruption event."
+        },
+        {
+          "name": "VM Crash (Compute Outage)",
+          "impact": "Temporary server errors (HTTP 502/503) for active users.",
+          "rto": "2 minutes",
+          "rpo": "None (Zero data loss)",
+          "recoveryCost": "$0 (Auto-healed)",
+          "riskLevel": "Low",
+          "recoveryPlan": "Virtual Machine scale sets detect unhealthy nodes, automatically terminate them, and spin up fresh container instances behind the load balancer."
+        },
+        {
+          "name": "Traffic Spike (Slashdot Effect)",
+          "impact": "Slow API responses, database resource locking.",
+          "rto": "5 minutes",
+          "rpo": "None",
+          "recoveryCost": "$100 (Dynamic scale up)",
+          "riskLevel": "Medium",
+          "recoveryPlan": "Autoscaling rules trigger compute additions when CPU hits 75%. Redis cache acts as a buffer for read requests."
+        },
+        {
+          "name": "DDoS Attack",
+          "impact": "Exhausted network bandwidth, denying entry to users.",
+          "rto": "Instantaneous protection",
+          "rpo": "None",
+          "recoveryCost": "$0 (Managed shield)",
+          "riskLevel": "Low",
+          "recoveryPlan": "Azure DDoS Protection Standard / WAF filters malicious IP subnet headers and caps rate-limits at the edge."
+        },
+        {
+          "name": "Backup Service Failure",
+          "impact": "Risk of permanent data loss in future disasters, SLA violations.",
+          "rto": "1 day to resolve backup pipelines",
+          "rpo": "None (For current state)",
+          "recoveryCost": "$200 (DevOps hours)",
+          "riskLevel": "Medium",
+          "recoveryPlan": "Trigger DevOps alerts to debug failing snapshot cron jobs and store manual emergency backups to a secondary cold Blob container."
+        }
+      ]
+    },
+    "4f274b74-b6c2-4119-a75b-1bf510a615a9": {
+      "projectId": "4f274b74-b6c2-4119-a75b-1bf510a615a9",
+      "score": 85,
+      "risks": [
+        "Slight cross-region replication latency",
+        "Missing multi-zone compute redundancy if VM scale set is single-region",
+        "Slow data sync during peak cache misses"
+      ],
+      "scenarios": [
+        {
+          "name": "Azure Region Failure",
+          "impact": "Complete service blackout for all region-bound clients.",
+          "rto": "4 hours",
+          "rpo": "1 hour",
+          "recoveryCost": "$500 (Traffic DNS failover)",
+          "riskLevel": "High",
+          "recoveryPlan": "Trigger automatic DNS failover in Azure Front Door to secondary paired region. Re-route database connection strings to the read-replica."
+        },
+        {
+          "name": "Database Failure / Corruption",
+          "impact": "Core write operations halt, leading to partial service outage.",
+          "rto": "10 minutes",
+          "rpo": "1 minute",
+          "recoveryCost": "$300 (Restore tasks)",
+          "riskLevel": "Medium",
+          "recoveryPlan": "Initiate automated Point-in-Time Restore (PITR) to restore database state immediately prior to corruption event."
+        },
+        {
+          "name": "VM Crash (Compute Outage)",
+          "impact": "Temporary server errors (HTTP 502/503) for active users.",
+          "rto": "2 minutes",
+          "rpo": "None (Zero data loss)",
+          "recoveryCost": "$0 (Auto-healed)",
+          "riskLevel": "Low",
+          "recoveryPlan": "Virtual Machine scale sets detect unhealthy nodes, automatically terminate them, and spin up fresh container instances behind the load balancer."
+        },
+        {
+          "name": "Traffic Spike (Slashdot Effect)",
+          "impact": "Slow API responses, database resource locking.",
+          "rto": "5 minutes",
+          "rpo": "None",
+          "recoveryCost": "$100 (Dynamic scale up)",
+          "riskLevel": "Medium",
+          "recoveryPlan": "Autoscaling rules trigger compute additions when CPU hits 75%. Redis cache acts as a buffer for read requests."
+        },
+        {
+          "name": "DDoS Attack",
+          "impact": "Exhausted network bandwidth, denying entry to users.",
+          "rto": "Instantaneous protection",
+          "rpo": "None",
+          "recoveryCost": "$0 (Managed shield)",
+          "riskLevel": "Low",
+          "recoveryPlan": "Azure DDoS Protection Standard / WAF filters malicious IP subnet headers and caps rate-limits at the edge."
+        },
+        {
+          "name": "Backup Service Failure",
+          "impact": "Risk of permanent data loss in future disasters, SLA violations.",
+          "rto": "1 day to resolve backup pipelines",
+          "rpo": "None (For current state)",
+          "recoveryCost": "$200 (DevOps hours)",
+          "riskLevel": "Medium",
+          "recoveryPlan": "Trigger DevOps alerts to debug failing snapshot cron jobs and store manual emergency backups to a secondary cold Blob container."
+        }
+      ]
+    },
+    "463f8c4b-cb83-4670-b310-10c6c9a8ab44": {
+      "projectId": "463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "score": 85,
+      "risks": [
+        "Slight cross-region replication latency",
+        "Missing multi-zone compute redundancy if VM scale set is single-region",
+        "Slow data sync during peak cache misses"
+      ],
+      "scenarios": [
+        {
+          "name": "Azure Region Failure",
+          "impact": "Complete service blackout for all region-bound clients.",
+          "rto": "4 hours",
+          "rpo": "1 hour",
+          "recoveryCost": "$500 (Traffic DNS failover)",
+          "riskLevel": "High",
+          "recoveryPlan": "Trigger automatic DNS failover in Azure Front Door to secondary paired region. Re-route database connection strings to the read-replica."
+        },
+        {
+          "name": "Database Failure / Corruption",
+          "impact": "Core write operations halt, leading to partial service outage.",
+          "rto": "10 minutes",
+          "rpo": "1 minute",
+          "recoveryCost": "$300 (Restore tasks)",
+          "riskLevel": "Medium",
+          "recoveryPlan": "Initiate automated Point-in-Time Restore (PITR) to restore database state immediately prior to corruption event."
+        },
+        {
+          "name": "VM Crash (Compute Outage)",
+          "impact": "Temporary server errors (HTTP 502/503) for active users.",
+          "rto": "2 minutes",
+          "rpo": "None (Zero data loss)",
+          "recoveryCost": "$0 (Auto-healed)",
+          "riskLevel": "Low",
+          "recoveryPlan": "Virtual Machine scale sets detect unhealthy nodes, automatically terminate them, and spin up fresh container instances behind the load balancer."
+        },
+        {
+          "name": "Traffic Spike (Slashdot Effect)",
+          "impact": "Slow API responses, database resource locking.",
+          "rto": "5 minutes",
+          "rpo": "None",
+          "recoveryCost": "$100 (Dynamic scale up)",
+          "riskLevel": "Medium",
+          "recoveryPlan": "Autoscaling rules trigger compute additions when CPU hits 75%. Redis cache acts as a buffer for read requests."
+        },
+        {
+          "name": "DDoS Attack",
+          "impact": "Exhausted network bandwidth, denying entry to users.",
+          "rto": "Instantaneous protection",
+          "rpo": "None",
+          "recoveryCost": "$0 (Managed shield)",
+          "riskLevel": "Low",
+          "recoveryPlan": "Azure DDoS Protection Standard / WAF filters malicious IP subnet headers and caps rate-limits at the edge."
+        },
+        {
+          "name": "Backup Service Failure",
+          "impact": "Risk of permanent data loss in future disasters, SLA violations.",
+          "rto": "1 day to resolve backup pipelines",
+          "rpo": "None (For current state)",
+          "recoveryCost": "$200 (DevOps hours)",
+          "riskLevel": "Medium",
+          "recoveryPlan": "Trigger DevOps alerts to debug failing snapshot cron jobs and store manual emergency backups to a secondary cold Blob container."
+        }
+      ]
+    }
+  },
+  "proposals": {
+    "90ecc23f-549b-4f36-b65c-90df87d37b02": {
+      "projectId": "90ecc23f-549b-4f36-b65c-90df87d37b02",
+      "exportUrlDocx": "/static/exports/proposal_90ecc23f-549b-4f36-b65c-90df87d37b02.docx",
+      "exportUrlPdf": "/static/exports/proposal_90ecc23f-549b-4f36-b65c-90df87d37b02.pdf",
+      "contentSummary": "This cloud solution proposal is designed for Paradise Immigration to address their workload demands in a resilient, cost-optimized, and secure environment."
+    },
+    "4f274b74-b6c2-4119-a75b-1bf510a615a9": {
+      "projectId": "4f274b74-b6c2-4119-a75b-1bf510a615a9",
+      "exportUrlDocx": "/static/exports/proposal_4f274b74-b6c2-4119-a75b-1bf510a615a9.docx",
+      "exportUrlPdf": "/static/exports/proposal_4f274b74-b6c2-4119-a75b-1bf510a615a9.pdf",
+      "contentSummary": "This cloud solution proposal is designed for FastRetail Inc to address their workload demands in a resilient, cost-optimized, and secure environment."
+    },
+    "463f8c4b-cb83-4670-b310-10c6c9a8ab44": {
+      "projectId": "463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "exportUrlDocx": "/static/exports/proposal_463f8c4b-cb83-4670-b310-10c6c9a8ab44.docx",
+      "exportUrlPdf": "/static/exports/proposal_463f8c4b-cb83-4670-b310-10c6c9a8ab44.pdf",
+      "contentSummary": "This cloud solution proposal is designed for Bonne Perfumes to address their workload demands in a resilient, cost-optimized, and secure environment."
+    }
+  },
+  "presentations": {
+    "90ecc23f-549b-4f36-b65c-90df87d37b02": {
+      "projectId": "90ecc23f-549b-4f36-b65c-90df87d37b02",
+      "exportUrlPptx": "/static/exports/proposal_90ecc23f-549b-4f36-b65c-90df87d37b02.pptx"
+    },
+    "4f274b74-b6c2-4119-a75b-1bf510a615a9": {
+      "projectId": "4f274b74-b6c2-4119-a75b-1bf510a615a9",
+      "exportUrlPptx": "/static/exports/proposal_4f274b74-b6c2-4119-a75b-1bf510a615a9.pptx"
+    },
+    "463f8c4b-cb83-4670-b310-10c6c9a8ab44": {
+      "projectId": "463f8c4b-cb83-4670-b310-10c6c9a8ab44",
+      "exportUrlPptx": "/static/exports/proposal_463f8c4b-cb83-4670-b310-10c6c9a8ab44.pptx"
+    }
+  }
+}

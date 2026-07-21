@@ -79,6 +79,45 @@ async def create_project(payload: ProjectCreate, user: dict = Depends(get_curren
         }
         
         project_ref.set(project_data)
+        
+        # Initialize requirements and conversation history documents
+        requirements_data = {
+            "industry": payload.industry,
+            "preferredCloud": payload.preferredCloud,
+            "budget": payload.budget,
+            "timeline": payload.timeline,
+            "businessGoal": payload.description,
+            "confirmed": False
+        }
+        db.collection("requirements").document(project_id).set(requirements_data)
+
+        # Get initial checklist state and select the first missing field to question
+        from app.agents.requirement_agent import requirement_agent, FIELD_QUESTIONS
+        checklist_state = requirement_agent.get_checklist_state(requirements_data)
+        missing_field = None
+        for item in checklist_state:
+            if not item["filled"]:
+                missing_field = item["field"]
+                break
+        
+        next_question = FIELD_QUESTIONS.get(missing_field, "What platforms do you want to target (Web, Android, iOS)?")
+        
+        welcome_text = (
+            f"Hello! I am your Senior Business Analyst and Presales Architect. I've loaded your project details for "
+            f"**{payload.name}** at **{payload.company}**.\n\n"
+            f"Based on the project initialization details, we have set the industry to **{payload.industry}**, "
+            f"preferred cloud to **{payload.preferredCloud}**, budget to **${payload.budget:,.2f}/mo**, and timeline to **{payload.timeline}**.\n\n"
+            f"{next_question}"
+        )
+        
+        db.collection("conversations").document(project_id).set({
+            "projectId": project_id,
+            "history": [
+                {"role": "assistant", "content": welcome_text}
+            ],
+            "updatedAt": time.time()
+        })
+        
         log_activity(org_id, user_email, "CREATE_PROJECT", f"Created project {payload.name} for {payload.company}")
         
         return project_data
@@ -120,16 +159,28 @@ async def get_project(project_id: str, user: dict = Depends(get_current_user)):
     fail_snap = db.collection("failureSimulations").document(project_id).get()
     prop_snap = db.collection("proposals").document(project_id).get()
     pres_snap = db.collection("presentations").document(project_id).get()
+    conv_snap = db.collection("conversations").document(project_id).get()
+
+    reqs = req_snap.to_dict() if req_snap.exists else None
+    scores = None
+    checklist_state = None
+    if reqs:
+        from app.agents.requirement_agent import requirement_agent
+        scores = requirement_agent.calculate_completeness_scores(reqs)
+        checklist_state = requirement_agent.get_checklist_state(reqs)
 
     return {
         **project,
-        "requirements": req_snap.to_dict() if req_snap.exists else None,
+        "requirements": reqs,
+        "completenessScore": scores,
+        "checklistState": checklist_state,
         "architecture": arch_snap.to_dict() if arch_snap.exists else None,
         "pricing": pricing_snap.to_dict() if pricing_snap.exists else None,
         "negotiation": neg_snap.to_dict() if neg_snap.exists else None,
         "resilience": fail_snap.to_dict() if fail_snap.exists else None,
         "proposal": prop_snap.to_dict() if prop_snap.exists else None,
         "presentation": pres_snap.to_dict() if pres_snap.exists else None,
+        "conversation": conv_snap.to_dict().get("history") if conv_snap.exists else None,
     }
 
 @router.patch("/{project_id}")
@@ -177,6 +228,7 @@ async def delete_project(project_id: str, user: dict = Depends(check_role(["Admi
         # Delete project and sub-details
         doc_ref.delete()
         db.collection("requirements").document(project_id).delete()
+        db.collection("conversations").document(project_id).delete()
         db.collection("architectures").document(project_id).delete()
         db.collection("pricingReports").document(project_id).delete()
         db.collection("negotiations").document(project_id).delete()

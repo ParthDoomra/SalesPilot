@@ -27,6 +27,76 @@ interface ProjectDetail {
   proposal?: any;
   presentation?: any;
 }
+// Typewriter animation component to simulate real-time AI streaming
+function TypewriterText({ text, speed = 6 }: { text: string; speed?: number }) {
+  const [displayedText, setDisplayedText] = useState('');
+
+  useEffect(() => {
+    setDisplayedText('');
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        setDisplayedText((prev) => prev + text.slice(i, i + 3));
+        i += 3;
+      } else {
+        clearInterval(interval);
+      }
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, [text, speed]);
+
+  return <p className="whitespace-pre-wrap">{displayedText}</p>;
+}
+
+// Collapsible category checklist accordion
+function CategoryAccordion({ title, score, items }: { title: string; score: number; items: any[] }) {
+  const [isOpen, setIsOpen] = useState(true);
+  return (
+    <div className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-950/20">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex justify-between items-center p-3 bg-slate-900/30 text-left text-xs font-bold text-slate-200 hover:bg-slate-900/60 transition-colors"
+      >
+        <span className="flex items-center gap-1.5">
+          <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-150 ${isOpen ? 'rotate-90 text-cyan-400' : 'text-slate-500'}`} />
+          <span>{title}</span>
+        </span>
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+          score >= 90 ? 'bg-green-500/10 text-green-400' : score >= 50 ? 'bg-yellow-500/10 text-yellow-400' : 'bg-slate-850 text-slate-500'
+        }`}>
+          {score}%
+        </span>
+      </button>
+      {isOpen && (
+        <div className="p-3 space-y-2 border-t border-slate-800/40 bg-slate-950/40">
+          {items.map((item, idx) => (
+            <div key={idx} className="flex items-start gap-2 text-[11px] leading-tight">
+              {item.filled ? (
+                <Check className="w-3.5 h-3.5 text-green-400 shrink-0 mt-0.5" />
+              ) : (
+                <AlertTriangle className="w-3.5 h-3.5 text-slate-600 shrink-0 mt-0.5" />
+              )}
+              <div className="space-y-0.5 flex-grow">
+                <div className="font-bold text-slate-300">{item.label}</div>
+                <div className="text-[10px] text-slate-400 font-semibold break-words">
+                  {item.filled ? (
+                    typeof item.value === 'boolean' ? 'Enabled' :
+                    Array.isArray(item.value) ? item.value.join(', ') :
+                    typeof item.value === 'number' ? `₹${item.value.toLocaleString()}` :
+                    String(item.value)
+                  ) : (
+                    <span className="text-slate-700 italic font-normal">Missing</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ProjectWorkspace() {
   const { projectId } = useParams() as { projectId: string };
@@ -35,33 +105,33 @@ export default function ProjectWorkspace() {
   
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'requirements' | 'architecture' | 'pricing' | 'negotiation' | 'resilience' | 'proposal'>('requirements');
-  const [reqMethod, setReqMethod] = useState<'form' | 'voice' | 'upload'>('form');
+  const [reqMethod, setReqMethod] = useState<'chat' | 'upload'>('chat');
 
-  // Voice State
+  // New Requirements & Pipeline State
+  const [pastedRequirements, setPastedRequirements] = useState('');
+  const [projectName, setProjectName] = useState('');
+  const [pipelineProgress, setPipelineProgress] = useState('');
+  const [missingInfoAnswers, setMissingInfoAnswers] = useState<Record<string, string>>({});
+
+  // Conversational state variables
+  const [requirements, setRequirements] = useState<any>(null);
+  const [completenessScore, setCompletenessScore] = useState<any>(null);
+  const [checklistState, setChecklistState] = useState<any[]>([]);
+  const [showJsonEditor, setShowJsonEditor] = useState(false);
+  const [editedJsonText, setEditedJsonText] = useState('');
+
+  // Voice/Chat State
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([
-    { role: 'assistant', content: "Hello! I am your AI Solution Architect. Let's gather your cloud requirement specs. What cloud provider do you prefer (Azure, AWS, GCP) and do you have any budget cap?" }
-  ]);
+  const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
   const [voiceLoading, setVoiceLoading] = useState(false);
   const recognitionRef = useRef<any>(null);
 
   // Upload State
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
-
-  // Form State
-  const [industry, setIndustry] = useState('IT Services');
-  const [prefCloud, setPrefCloud] = useState('Azure');
-  const [usersCount, setUsersCount] = useState(5000);
-  const [storageGb, setStorageGb] = useState(100);
-  const [compliance, setCompliance] = useState<string[]>(['SOC2']);
-  const [modules, setModules] = useState<string[]>(['Authentication', 'Core API', 'Storage']);
-  const [dbType, setDbType] = useState('Relational (PostgreSQL)');
-  const [availability, setAvailability] = useState('99.9% High Availability');
-  const [security, setSecurity] = useState('SSL/TLS Encryption');
-  const [traffic, setTraffic] = useState('Average workload');
   
   // Pipeline Loaders
   const [pipelineLoading, setPipelineLoading] = useState<string | null>(null);
@@ -69,25 +139,38 @@ export default function ProjectWorkspace() {
   // Load project initially
   const loadProject = async () => {
     try {
+      setError(null);
       const data = await apiFetch(`/projects/${projectId}`);
       setProject(data);
-      
-      // Auto populate form details if requirements already exist
-      if (data.requirements) {
-        const req = data.requirements;
-        setIndustry(req.industry || 'IT Services');
-        setPrefCloud(req.preferredCloud || 'Azure');
-        setUsersCount(req.usersCount || 5000);
-        setStorageGb(req.storageGb || 100);
-        setCompliance(req.compliance || ['SOC2']);
-        setModules(req.modules || ['Auth', 'Core API']);
-        setDbType(req.databaseType || 'Relational (PostgreSQL)');
-        setAvailability(req.availability || '99.9%');
-        setSecurity(req.security || 'SSL/TLS');
-        setTraffic(req.traffic || 'Average');
+      if (data.name) {
+        setProjectName(data.name);
       }
-    } catch (e) {
+      
+      if (data.requirements) {
+        setRequirements(data.requirements);
+      }
+      
+      if (data.completenessScore) {
+        setCompletenessScore(data.completenessScore);
+      }
+      
+      if (data.checklistState) {
+        setChecklistState(data.checklistState);
+      }
+      
+      if (data.conversation && data.conversation.length > 0) {
+        setChatHistory(data.conversation);
+      } else {
+        const welcomeText = `Hello! I am your Senior Business Analyst and Presales Architect. Let's gather your cloud requirements for project **${data.name}** at **${data.company}**. 
+ 
+What industry does your solution focus on (e.g. Retail, Healthcare, Banking, Education, Manufacturing, Government)?`;
+        setChatHistory([
+          { role: 'assistant', content: welcomeText }
+        ]);
+      }
+    } catch (e: any) {
       console.error("Failed to load project solution details:", e);
+      setError(e.message || "Project not found.");
     } finally {
       setLoading(false);
     }
@@ -130,49 +213,42 @@ export default function ProjectWorkspace() {
   };
 
   const handleSendVoiceTurn = async () => {
-    if (!transcript) return;
+    if (!transcript.trim()) return;
     setVoiceLoading(true);
     
-    const newHistory = [...chatHistory, { role: 'user' as const, content: transcript }];
+    const userMsg = transcript.trim();
+    const newHistory = [...chatHistory, { role: 'user' as const, content: userMsg }];
+    
     setChatHistory(newHistory);
     setTranscript('');
     
     try {
-      const res = await apiFetch('/agents/voice-step', {
+      const res = await apiFetch(`/agents/voice-step/${projectId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transcript: transcript,
-          chatHistory: newHistory
+          transcript: userMsg,
+          chatHistory: chatHistory
         })
       });
       
-      if (res.isComplete && res.requirements) {
-        // Automatically save requirements
-        await apiFetch(`/agents/save-requirements/${projectId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            industry: 'IT Services',
-            preferredCloud: res.requirements.preferredCloud || 'Azure',
-            usersCount: res.requirements.usersCount || 5000,
-            storageGb: res.requirements.storageGb || 100,
-            compliance: res.requirements.compliance || ['SOC2'],
-            modules: res.requirements.modules || ['Auth', 'Core API'],
-            databaseType: res.requirements.databaseType || 'PostgreSQL',
-            availability: res.requirements.availability || '99.9%',
-            security: res.requirements.security || 'TLS',
-            traffic: res.requirements.traffic || 'Average'
-          })
-        });
-        
-        setChatHistory([...newHistory, { role: 'assistant', content: "Requirements compiled successfully! You can now generate the cloud architecture under the next tab." }]);
-        loadProject();
-      } else {
-        setChatHistory([...newHistory, { role: 'assistant', content: res.message }]);
+      if (res.requirements) {
+        setRequirements(res.requirements);
       }
+      if (res.completenessScore) {
+        setCompletenessScore(res.completenessScore);
+      }
+      if (res.checklistState) {
+        setChecklistState(res.checklistState);
+      }
+      if (res.chatHistory) {
+        setChatHistory(res.chatHistory);
+      }
+      
+      loadProject();
     } catch (e) {
-      console.error("Voice step error:", e);
+      console.error("Chat turn error:", e);
+      setChatHistory([...newHistory, { role: 'assistant', content: "I apologize, I experienced a connection issue. Could you please repeat that?" }]);
     } finally {
       setVoiceLoading(false);
     }
@@ -188,7 +264,6 @@ export default function ProjectWorkspace() {
     formData.append("file", uploadFile);
 
     try {
-      // Use standard fetch here because of FormData boundary requirements
       const storedUser = localStorage.getItem("salespilot_mock_user");
       const token = storedUser ? JSON.parse(storedUser).token : "";
       
@@ -208,9 +283,28 @@ export default function ProjectWorkspace() {
         body: JSON.stringify(data.requirements)
       });
       
-      setReqMethod('form');
+      // Seed first chat message summarizing RFP and asking next question
+      const rfpMsg = `I've analyzed your RFP file **${uploadFile.name}** and extracted initial requirements. You can see the details in the live sidebar. 
+
+Let's continue. What is your target timeline or timeline requirements for launching this solution?`;
+
+      await apiFetch(`/agents/voice-step/${projectId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcript: `Uploaded RFP file: ${uploadFile.name}`,
+          chatHistory: [
+            { role: 'assistant', content: "I will analyze your RFP document." },
+            { role: 'user', content: `Analyzed document ${uploadFile.name}` },
+            { role: 'assistant', content: rfpMsg }
+          ]
+        })
+      });
+
+      setReqMethod('chat');
+      setUploadFile(null);
       loadProject();
-      alert("RFP requirements analyzed and extracted successfully!");
+      alert("RFP requirements analyzed successfully!");
     } catch (e) {
       console.error(e);
       alert("Failed to analyze RFP file.");
@@ -219,32 +313,170 @@ export default function ProjectWorkspace() {
     }
   };
 
-  // Manual Form save
-  const handleSaveForm = async () => {
+  const handleConfirmRequirements = async () => {
+    if (!requirements) return;
     setPipelineLoading("requirements");
     try {
+      const updatedReqs = { ...requirements, confirmed: true };
       await apiFetch(`/agents/save-requirements/${projectId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          industry,
-          preferredCloud: prefCloud,
-          usersCount,
-          storageGb,
-          compliance,
-          modules,
-          databaseType: dbType,
-          availability,
-          security,
-          traffic
-        })
+        body: JSON.stringify(updatedReqs)
       });
+      alert("Requirements confirmed successfully!");
       await loadProject();
-      alert("Project requirements saved successfully.");
+      setActiveTab('architecture');
     } catch (e) {
       console.error(e);
+      alert("Failed to confirm requirements.");
     } finally {
       setPipelineLoading(null);
+    }
+  };
+
+  const handleOpenJsonEditor = () => {
+    setEditedJsonText(JSON.stringify(requirements || {}, null, 2));
+    setShowJsonEditor(true);
+  };
+
+  const handleSaveJsonEditor = async () => {
+    try {
+      const parsed = JSON.parse(editedJsonText);
+      await apiFetch(`/agents/save-requirements/${projectId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parsed)
+      });
+      setShowJsonEditor(false);
+      loadProject();
+      alert("Requirements updated successfully.");
+    } catch (e) {
+      alert("Invalid JSON format. Please correct it.");
+    }
+  };
+
+  // Run End-to-End Automated Pipeline
+  const runAutomatedPipeline = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFile && !pastedRequirements.trim()) {
+      alert("Please upload a requirement document or paste requirements text.");
+      return;
+    }
+    setPipelineLoading("pipeline");
+    setPipelineProgress("Uploading requirements document...");
+
+    const formData = new FormData();
+    if (uploadFile) {
+      formData.append("file", uploadFile);
+    }
+    if (pastedRequirements) {
+      formData.append("pasted_requirements", pastedRequirements);
+    }
+    if (projectName) {
+      formData.append("projectName", projectName);
+    }
+
+    const progressSteps = [
+      { delay: 1000, msg: "Extracting text structure..." },
+      { delay: 2500, msg: "Running Requirement Ingestion Agent..." },
+      { delay: 5000, msg: "Designing multi-tier cloud topology..." },
+      { delay: 7000, msg: "Estimating pricing & billing specs..." },
+      { delay: 8500, msg: "Optimizing FinOps budget constraints..." },
+      { delay: 10000, msg: "Auditing resilience & chaos recovery SLAs..." },
+      { delay: 11500, msg: "Compiling final PDF/DOCX/PPTX proposals..." },
+      { delay: 13000, msg: "Syncing workspace states..." }
+    ];
+
+    const timers = progressSteps.map(step =>
+      setTimeout(() => setPipelineProgress(step.msg), step.delay)
+    );
+
+    try {
+      const storedUser = localStorage.getItem("salespilot_mock_user");
+      const token = storedUser ? JSON.parse(storedUser).token : "";
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/agents/pipeline/${projectId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      if (!res.ok) {
+        throw new Error("Pipeline compilation failed.");
+      }
+
+      timers.forEach(clearTimeout);
+      await loadProject();
+      alert("Pipeline completed successfully! All tabs have been populated and unlocked.");
+    } catch (err: any) {
+      timers.forEach(clearTimeout);
+      alert(err.message || "Pipeline execution failed.");
+    } finally {
+      setPipelineLoading(null);
+      setPipelineProgress('');
+    }
+  };
+
+  const handleResolveMissingGaps = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const answersText = Object.entries(missingInfoAnswers)
+      .filter(([_, ans]) => ans.trim() !== '')
+      .map(([ques, ans]) => `- Resolved Missing Info: [${ques}] = ${ans}`)
+      .join('\n');
+      
+    if (!answersText) {
+      alert("Please fill in at least one clarification field to re-analyze.");
+      return;
+    }
+    
+    const updatedText = `${requirements.extractedText || pastedRequirements || ''}\n\n${answersText}`;
+    
+    setPipelineLoading("pipeline");
+    setPipelineProgress("Submitting resolved requirements...");
+    
+    const formData = new FormData();
+    formData.append("pasted_requirements", updatedText);
+    if (projectName) {
+      formData.append("projectName", projectName);
+    }
+    
+    const progressSteps = [
+      { delay: 1000, msg: "Reparsing unified specifications..." },
+      { delay: 2500, msg: "Regenerating Cloud Architecture topology..." },
+      { delay: 4500, msg: "Recalculating Infrastructure pricing BOM..." },
+      { delay: 6500, msg: "Re-optimizing FinOps budget alignment..." },
+      { delay: 8500, msg: "Re-compiling proposal slides & files..." },
+      { delay: 10000, msg: "Syncing solution workspace..." }
+    ];
+    
+    const timers = progressSteps.map(step => 
+      setTimeout(() => setPipelineProgress(step.msg), step.delay)
+    );
+
+    try {
+      const storedUser = localStorage.getItem("salespilot_mock_user");
+      const token = storedUser ? JSON.parse(storedUser).token : "";
+      
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/agents/pipeline/${projectId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      if (!res.ok) {
+        throw new Error("Re-analysis pipeline failed.");
+      }
+      
+      timers.forEach(clearTimeout);
+      setMissingInfoAnswers({});
+      await loadProject();
+      alert("Solution architecture and pricing recalculated with your inputs!");
+    } catch (err: any) {
+      timers.forEach(clearTimeout);
+      alert(err.message || "Failed to update specifications.");
+    } finally {
+      setPipelineLoading(null);
+      setPipelineProgress('');
     }
   };
 
@@ -313,9 +545,9 @@ export default function ProjectWorkspace() {
     }
   };
 
-  if (loading || !project) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center font-sans">
         <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-bold text-slate-950 text-xl animate-pulse">
           S
         </div>
@@ -324,10 +556,37 @@ export default function ProjectWorkspace() {
     );
   }
 
+  if (error || !project) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center font-sans p-6 text-center">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-md w-full space-y-6 shadow-2xl">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mx-auto">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-base font-bold text-slate-100 uppercase tracking-wider">Solution Proposal Not Found</h3>
+            <p className="text-slate-400 text-xs leading-relaxed">
+              {error || "The requested solution details could not be loaded or the database record was wiped from memory due to server reloads."}
+            </p>
+          </div>
+          <button
+            onClick={() => window.location.href = '/dashboard'}
+            className="block w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-lg text-xs transition-colors shadow-lg shadow-cyan-500/10 text-center"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Cost items configurations
   const costBreakdown = project.pricing?.breakdown || {};
   const monthlyTotal = project.pricing?.monthlyTotal || 0.0;
   const annualTotal = project.pricing?.annualTotal || 0.0;
+  
+  const overallScore = completenessScore?.Overall || 0;
+
 
   const chartData = Object.entries(costBreakdown)
     .map(([name, value]) => ({ name: name.toUpperCase(), value: value as number }))
@@ -356,7 +615,7 @@ export default function ProjectWorkspace() {
         {/* Status Indicators */}
         <div className="flex items-center gap-3">
           <div className="bg-slate-900 border border-slate-850 px-4 py-2 rounded-xl text-xs font-bold text-slate-300">
-            Budget Cap: <span className="text-slate-50">${project.budget.toLocaleString()}/mo</span>
+            Budget Cap: <span className="text-slate-50">₹{project.budget.toLocaleString()}/mo</span>
           </div>
           <span className={`
             px-3 py-1.5 rounded-full text-xs font-bold
@@ -371,7 +630,7 @@ export default function ProjectWorkspace() {
       <div className="flex items-center gap-2 border-b border-slate-850 overflow-x-auto pb-px">
         {[
           { id: 'requirements', label: '1. Requirements', icon: ListTodo },
-          { id: 'architecture', label: '2. Architecture', icon: Layers, locked: !project.requirements },
+          { id: 'architecture', label: '2. Architecture', icon: Layers, locked: !project.requirements || !project.requirements.confirmed },
           { id: 'pricing', label: '3. Cloud Pricing', icon: DollarSign, locked: !project.architecture },
           { id: 'negotiation', label: '4. FinOps Negotiation', icon: RefreshCw, locked: !project.pricing },
           { id: 'resilience', label: '5. Resilience Sim', icon: Shield, locked: !project.architecture },
@@ -402,184 +661,254 @@ export default function ProjectWorkspace() {
 
       {/* TAB CONTENT 1: Requirements Gathering */}
       {activeTab === 'requirements' && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Method Selection side */}
-          <div className="space-y-2">
-            {[
-              { id: 'form', label: 'Smart Dynamic Form', icon: ListTodo },
-              { id: 'voice', label: 'AI Voice Session', icon: Mic },
-              { id: 'upload', label: 'Upload Client RFP', icon: Upload }
-            ].map(m => (
-              <button
-                key={m.id}
-                onClick={() => setReqMethod(m.id as any)}
-                className={`
-                  w-full text-left px-4 py-3 rounded-xl border text-xs font-bold transition-all duration-150 flex items-center gap-3
-                  ${reqMethod === m.id 
-                    ? 'bg-slate-900 border-cyan-400/40 text-slate-100' 
-                    : 'bg-transparent border-slate-850 hover:bg-slate-900/40 text-slate-400 hover:text-slate-200'
-                  }
-                `}
-              >
-                <m.icon className="w-4 h-4 shrink-0" />
-                <span>{m.label}</span>
-              </button>
-            ))}
-          </div>
+        <div className="space-y-8">
+          {!requirements || !requirements.reportText ? (
+            // New Project Requirements Form
+            <div className="max-w-3xl mx-auto bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 shadow-2xl space-y-6">
+              <div className="text-center space-y-2 mb-6">
+                <Sparkles className="w-8 h-8 text-cyan-400 mx-auto animate-pulse" />
+                <h2 className="text-lg font-bold text-slate-100 uppercase tracking-wider">Initialize Solution Presales Pipeline</h2>
+                <p className="text-slate-400 text-xs max-w-md mx-auto">
+                  Provide your client specifications below. SalesPilot will automatically analyze and build the cloud design, live pricing, budget optimizations, resilience plans, and proposal.
+                </p>
+              </div>
 
-          {/* Form Wizard center */}
-          <div className="lg:col-span-3 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 shadow-inner relative">
-            {reqMethod === 'form' && (
-              <div className="space-y-6 text-xs font-medium">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-base font-bold text-slate-100">Requirements Specification Sheet</h3>
-                  <button 
-                    onClick={handleSaveForm}
-                    disabled={pipelineLoading === "requirements"}
+              {pipelineLoading === "pipeline" ? (
+                // Processing view
+                <div className="flex flex-col items-center justify-center py-16 space-y-6">
+                  <div className="w-16 h-16 rounded-full border-4 border-t-cyan-500 border-r-cyan-500/20 border-b-cyan-500/20 border-l-cyan-500/20 animate-spin" />
+                  <div className="space-y-2 text-center">
+                    <span className="text-xs text-slate-400 font-bold tracking-widest uppercase block animate-pulse">Running Ingestion Engine</span>
+                    <span className="text-xxs text-cyan-400 font-mono block">{pipelineProgress}</span>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={runAutomatedPipeline} className="space-y-6 text-xs font-semibold">
+                  {/* Project Name */}
+                  <div className="space-y-2">
+                    <label className="block text-slate-400 uppercase tracking-wider text-[10px]">Project Name</label>
+                    <input
+                      type="text"
+                      value={projectName}
+                      onChange={(e) => setProjectName(e.target.value)}
+                      placeholder="e.g. ShopSphere E-Commerce Cloud Proposal"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
+
+                  {/* Document Uploader */}
+                  <div className="space-y-2">
+                    <label className="block text-slate-400 uppercase tracking-wider text-[10px]">Requirement Document (PDF, DOCX, TXT)</label>
+                    <div className="border border-dashed border-slate-850 bg-slate-950/40 rounded-xl p-6 text-center hover:border-slate-850 transition-colors relative flex flex-col justify-center items-center gap-3">
+                      <FileUp className="w-8 h-8 text-slate-500" />
+                      <div>
+                        <span className="text-slate-300 block text-xs">
+                          {uploadFile ? uploadFile.name : "Select or drag client document here"}
+                        </span>
+                        <span className="text-[10px] text-slate-500 mt-1 block">Maximum file size: 10MB</span>
+                      </div>
+                      <input
+                        type="file"
+                        accept=".pdf,.docx,.txt"
+                        onChange={(e) => setUploadFile(e.target.files ? e.target.files[0] : null)}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="text-center text-slate-500 font-bold uppercase text-[9px] tracking-widest py-1">OR</div>
+
+                  {/* Text Paste Editor */}
+                  <div className="space-y-2">
+                    <label className="block text-slate-400 uppercase tracking-wider text-[10px]">Paste Project Requirements</label>
+                    <textarea
+                      rows={8}
+                      value={pastedRequirements}
+                      onChange={(e) => setPastedRequirements(e.target.value)}
+                      placeholder="Paste RFP contents, technical specifications, database demands, or timeline notes here..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-200 outline-none focus:border-cyan-500/50 font-mono text-[11px]"
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={!uploadFile && !pastedRequirements.trim()}
+                    className="w-full bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-extrabold py-3.5 rounded-xl transition-all shadow-lg shadow-cyan-500/10 uppercase tracking-widest text-xs flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Analyze Requirements</span>
+                  </button>
+                </form>
+              )}
+            </div>
+          ) : (
+            // Requirement Analysis Report View
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              {/* Left Column: Markdown Report Render (3 cols) */}
+              <div className="lg:col-span-3 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 shadow-inner space-y-6">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-100">Requirement Analysis Report</h3>
+                      <p className="text-[10px] text-slate-500">Ingested and parsed automatically by SalesPilot AI</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 text-xs">
+                    <button
+                      onClick={() => handleOpenJsonEditor()}
+                      className="px-3 py-1.5 rounded-lg border border-slate-800 text-[10px] font-bold text-slate-400 hover:text-slate-200 transition-colors"
+                    >
+                      Inspect JSON Specs
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm("Are you sure you want to reset requirements and upload new documents?")) {
+                          setRequirements(null);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-lg border border-red-950/45 bg-red-950/10 text-[10px] font-bold text-red-400 hover:bg-red-950/20 transition-all"
+                    >
+                      Re-Analyze Specs
+                    </button>
+                  </div>
+                </div>
+
+                <div className="prose prose-invert prose-xs max-w-none text-slate-300 leading-relaxed space-y-4">
+                  <div className="whitespace-pre-wrap font-sans text-xs bg-slate-950/30 p-4 rounded-xl border border-slate-850">
+                    {requirements.reportText}
+                  </div>
+                </div>
+
+                {/* Confirm continue link */}
+                <div className="bg-slate-950/40 border border-slate-850 rounded-xl p-4 flex justify-between items-center text-xs">
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <Check className="w-4 h-4 text-green-400 shrink-0" />
+                    <span>The Solution Architecture and Live Pricing estimate have been compiled from these requirements.</span>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('architecture')}
+                    className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-1 text-xs"
+                  >
+                    <span>Proceed to Architecture</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: Structured Specs Summary Cards (1 col) */}
+              <div className="space-y-6">
+                {/* Core parameters card */}
+                <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 shadow-inner space-y-4">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-2">Analysis Parameters</h4>
+                  
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider">Detected Industry</span>
+                      <span className="text-slate-200 font-bold block mt-0.5">{requirements.industry || "Retail"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider">Cloud Preference</span>
+                      <span className="text-cyan-400 font-bold block mt-0.5">{requirements.cloudPreference || "Any"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider">Timeline Goal</span>
+                      <span className="text-slate-200 font-bold block mt-0.5">{requirements.timeline || "Not specified"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider">Hosting Budget Limit</span>
+                      <span className="text-slate-200 font-bold block mt-0.5">{requirements.budget || "Not specified"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider">Expected Users</span>
+                      <span className="text-slate-200 font-bold block mt-0.5">{requirements.expectedUsers || "Not specified"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sizing indicators card */}
+                {requirements.missingInformation && requirements.missingInformation.length > 0 && (
+                  <div className="bg-amber-950/10 border border-amber-900/30 rounded-2xl p-4 shadow-inner space-y-4">
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5 border-b border-amber-900/20 pb-2">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <span>Resolve Missing Gaps ({requirements.missingInformation.length})</span>
+                    </h4>
+                    <form onSubmit={handleResolveMissingGaps} className="space-y-3">
+                      {requirements.missingInformation.map((m: string, idx: number) => (
+                        <div key={idx} className="space-y-1">
+                          <label className="block text-[10px] text-amber-400/80 leading-relaxed font-semibold">{m}</label>
+                          <input
+                            type="text"
+                            value={missingInfoAnswers[m] || ''}
+                            onChange={(e) => setMissingInfoAnswers(prev => ({ ...prev, [m]: e.target.value }))}
+                            placeholder="Provide details..."
+                            className="w-full bg-slate-950/60 border border-amber-900/20 rounded-lg p-2 text-xs text-slate-200 outline-none focus:border-amber-500/50"
+                          />
+                        </div>
+                      ))}
+                      <button
+                        type="submit"
+                        disabled={pipelineLoading === "pipeline"}
+                        className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-1 uppercase tracking-wider"
+                      >
+                        <span>Submit & Re-Analyze</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </form>
+                  </div>
+                )}
+
+                {/* Risks indicators card */}
+                {requirements.projectRisks && requirements.projectRisks.length > 0 && (
+                  <div className="bg-red-950/10 border border-red-900/30 rounded-2xl p-4 shadow-inner space-y-3">
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-red-400 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <span>SLA & Project Risks ({requirements.projectRisks.length})</span>
+                    </h4>
+                    <ul className="space-y-1.5 text-[11px] text-red-300/80 leading-relaxed list-disc list-inside">
+                      {requirements.projectRisks.map((r: string, idx: number) => (
+                        <li key={idx} className="truncate-2-lines">{r}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* JSON/Direct Requirements Editor Modal */}
+          {showJsonEditor && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-2xl w-full space-y-4 shadow-2xl">
+                <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider">Edit Requirements JSON Specs</h3>
+                <p className="text-slate-400 text-[11px] leading-relaxed">
+                  Modify the structured requirement parameters directly. Ensure valid JSON format.
+                </p>
+                <textarea
+                  value={editedJsonText}
+                  onChange={(e) => setEditedJsonText(e.target.value)}
+                  className="w-full h-96 bg-slate-950 border border-slate-850 rounded-xl p-4 font-mono text-xs text-cyan-400 outline-none focus:border-cyan-500/50"
+                />
+                <div className="flex justify-end gap-3 text-xs">
+                  <button
+                    onClick={() => setShowJsonEditor(false)}
+                    className="bg-transparent border border-slate-800 hover:bg-slate-850 px-4 py-2 rounded-lg font-bold text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveJsonEditor}
                     className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg font-bold transition-colors"
                   >
-                    {pipelineLoading === "requirements" ? "Saving..." : "Save Configuration"}
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-slate-400 mb-1">Target Cloud Provider</label>
-                    <select value={prefCloud} onChange={e => setPrefCloud(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 outline-none focus:border-cyan-500 text-slate-200">
-                      <option>Azure</option>
-                      <option>AWS</option>
-                      <option>GCP</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 mb-1">Database Model Preference</label>
-                    <input type="text" value={dbType} onChange={e => setDbType(e.target.value)} placeholder="e.g. Relational (PostgreSQL)" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 outline-none focus:border-cyan-500 text-slate-200" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-slate-400 mb-1">Estimated Concurrent Users</label>
-                    <input type="number" value={usersCount} onChange={e => setUsersCount(parseInt(e.target.value) || 0)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 outline-none focus:border-cyan-500 text-slate-200" />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 mb-1">Storage Demand (GB)</label>
-                    <input type="number" value={storageGb} onChange={e => setStorageGb(parseInt(e.target.value) || 0)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 outline-none focus:border-cyan-500 text-slate-200" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 mb-1.5">Compliance Requirements</label>
-                  <div className="flex gap-4">
-                    {['SOC2', 'GDPR', 'HIPAA', 'PCI-DSS'].map((c) => (
-                      <label key={c} className="flex items-center gap-2 cursor-pointer text-slate-300">
-                        <input 
-                          type="checkbox" 
-                          checked={compliance.includes(c)}
-                          onChange={() => {
-                            if (compliance.includes(c)) setCompliance(compliance.filter(i => i !== c));
-                            else setCompliance([...compliance, c]);
-                          }}
-                          className="rounded bg-slate-950 border-slate-800 text-cyan-500 focus:ring-0"
-                        />
-                        <span>{c}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {reqMethod === 'voice' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                    <Mic className="w-4 h-4 text-cyan-400" />
-                    <span>Solution Architect Gathering Session</span>
-                  </h3>
-                  <button 
-                    onClick={isRecording ? stopRecording : startRecording}
-                    className={`
-                      px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition-all
-                      ${isRecording 
-                        ? 'bg-red-950/20 border-red-500 text-red-400 animate-pulse' 
-                        : 'bg-slate-900 border-slate-800 hover:bg-slate-850 text-slate-200'
-                      }
-                    `}
-                  >
-                    {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-                    <span>{isRecording ? "Recording Microphone..." : "Speak Into Mic"}</span>
-                  </button>
-                </div>
-
-                {/* Conversation Panel */}
-                <div className="bg-slate-950/60 border border-slate-850 rounded-xl p-4 h-[250px] overflow-y-auto space-y-4">
-                  {chatHistory.map((msg, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`
-                        p-3 rounded-lg text-xs leading-relaxed max-w-[80%]
-                        ${msg.role === 'assistant' 
-                          ? 'bg-slate-900 text-slate-300 mr-auto' 
-                          : 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 ml-auto'
-                        }
-                      `}
-                    >
-                      {msg.content}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Input Controls */}
-                <div className="flex gap-3">
-                  <input 
-                    type="text" 
-                    value={transcript}
-                    onChange={e => setTranscript(e.target.value)}
-                    placeholder={isRecording ? "Listening to microphone input..." : "Type solution parameters or speak..."}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-xs outline-none focus:border-cyan-500"
-                  />
-                  <button 
-                    onClick={handleSendVoiceTurn}
-                    disabled={voiceLoading || !transcript}
-                    className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-6 rounded-lg text-xs shrink-0"
-                  >
-                    {voiceLoading ? "AI Thinking..." : "Send Turn"}
+                    Save Requirements
                   </button>
                 </div>
               </div>
-            )}
-
-            {reqMethod === 'upload' && (
-              <form onSubmit={handleRfpUpload} className="space-y-8 flex flex-col justify-center items-center py-8">
-                <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-                  <FileUp className="w-8 h-8" />
-                </div>
-                
-                <div className="text-center space-y-2">
-                  <h4 className="font-bold text-slate-100 text-sm">Drag and Drop Client RFP document</h4>
-                  <p className="text-slate-500 text-xs">Accepts PDF, Word (docx) or raw Text (txt) catalogs up to 10MB</p>
-                </div>
-
-                <div className="w-full max-w-sm">
-                  <input 
-                    type="file" 
-                    accept=".pdf,.docx,.txt"
-                    onChange={e => setUploadFile(e.target.files ? e.target.files[0] : null)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-400"
-                  />
-                </div>
-
-                <button 
-                  type="submit" 
-                  disabled={uploadLoading || !uploadFile}
-                  className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-8 py-3 rounded-lg font-bold text-xs transition-colors shadow-lg shadow-cyan-500/10"
-                >
-                  {uploadLoading ? "Extracting Requirements..." : "Analyze Document"}
-                </button>
-              </form>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -718,12 +1047,12 @@ export default function ProjectWorkspace() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-900/40 border border-slate-800/80 p-5 rounded-2xl shadow-inner">
                     <div className="text-slate-500 text-xxs font-bold uppercase tracking-wider mb-2">Monthly Cost Total</div>
-                    <div className="text-3xl font-extrabold text-cyan-400">${monthlyTotal.toLocaleString()}</div>
+                    <div className="text-3xl font-extrabold text-cyan-400">₹{monthlyTotal.toLocaleString()}</div>
                     <div className="text-[10px] text-slate-500 mt-2 font-medium">Billed dynamically on Azure Consumption</div>
                   </div>
                   <div className="bg-slate-900/40 border border-slate-800/80 p-5 rounded-2xl shadow-inner">
                     <div className="text-slate-500 text-xxs font-bold uppercase tracking-wider mb-2">Annualized Cost Total</div>
-                    <div className="text-3xl font-extrabold text-slate-50">${annualTotal.toLocaleString()}</div>
+                    <div className="text-3xl font-extrabold text-slate-50">₹{annualTotal.toLocaleString()}</div>
                     <div className="text-[10px] text-slate-500 mt-2 font-medium">Estimated monthly billing * 12</div>
                   </div>
                 </div>
@@ -742,7 +1071,7 @@ export default function ProjectWorkspace() {
                       {Object.entries(costBreakdown).map(([cat, val]: any) => (
                         <tr key={cat}>
                           <td className="py-3 px-2 font-bold capitalize text-slate-300">{cat}</td>
-                          <td className="py-3 px-2 text-right font-semibold text-slate-100">${val.toLocaleString()}</td>
+                          <td className="py-3 px-2 text-right font-semibold text-slate-100">₹{val.toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -789,7 +1118,7 @@ export default function ProjectWorkspace() {
                         <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
                         <span>{item.name}</span>
                       </div>
-                      <span className="font-semibold text-slate-200">${item.value.toLocaleString()}</span>
+                      <span className="font-semibold text-slate-200">₹{item.value.toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
@@ -832,17 +1161,17 @@ export default function ProjectWorkspace() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-slate-900/40 border border-slate-800/85 p-5 rounded-2xl">
                   <span className="text-slate-500 text-xxs font-bold uppercase tracking-wider block mb-1">Original Invoice Cost</span>
-                  <span className="text-xl font-extrabold text-slate-400">${project.negotiation.originalCost}/mo</span>
+                  <span className="text-xl font-extrabold text-slate-400">₹{project.negotiation.originalCost}/mo</span>
                 </div>
                 <div className="bg-cyan-500/5 border border-cyan-500/10 p-5 rounded-2xl relative">
                   <div className="absolute inset-0 bg-cyan-500/[0.02] blur-sm rounded-2xl"></div>
                   <span className="text-cyan-400 text-xxs font-bold uppercase tracking-wider block mb-1 relative z-10">Optimized Solutions Cost</span>
-                  <span className="text-xl font-extrabold text-cyan-400 relative z-10">${project.negotiation.optimizedCost}/mo</span>
+                  <span className="text-xl font-extrabold text-cyan-400 relative z-10">₹{project.negotiation.optimizedCost}/mo</span>
                 </div>
                 <div className="bg-green-500/5 border border-green-500/10 p-5 rounded-2xl relative">
                   <div className="absolute inset-0 bg-green-500/[0.02] blur-sm rounded-2xl"></div>
                   <span className="text-green-400 text-xxs font-bold uppercase tracking-wider block mb-1 relative z-10">Net Monthly Savings</span>
-                  <span className="text-xl font-extrabold text-green-400 relative z-10">${project.negotiation.savings}/mo</span>
+                  <span className="text-xl font-extrabold text-green-400 relative z-10">₹{project.negotiation.savings}/mo</span>
                 </div>
               </div>
 

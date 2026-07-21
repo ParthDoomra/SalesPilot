@@ -52,9 +52,33 @@ class ArchitectAgent:
             return self._generate_mock_architecture(reqs)
 
     def _generate_mock_architecture(self, reqs: Dict[str, Any]) -> Dict[str, Any]:
-        users = reqs.get("usersCount", 5000)
-        storage_gb = reqs.get("storageGb", 100)
-        cloud = reqs.get("preferredCloud", "Azure")
+        cloud = reqs.get("cloudPreference") or reqs.get("preferredCloud") or "Azure"
+        if not isinstance(cloud, str) or not cloud.strip() or cloud.lower() == "no preference":
+            cloud = "Azure"
+            
+        users_val = reqs.get("expectedUsers") or reqs.get("usersCount") or 5000
+        import re
+        if isinstance(users_val, str):
+            numbers = re.findall(r'\d+(?:,\d+)*(?:\.\d+)?', users_val)
+            if numbers:
+                try:
+                    users = int(float(numbers[0].replace(",", "")))
+                    users_val_lower = users_val.lower()
+                    if "million" in users_val_lower or re.search(r'\b\d+\s*m\b', users_val_lower) or re.search(r'\b\d+m\b', users_val_lower):
+                        users *= 1000000
+                    elif "k" in users_val_lower or "thousand" in users_val_lower or re.search(r'\b\d+\s*k\b', users_val_lower) or re.search(r'\b\d+k\b', users_val_lower):
+                        users *= 1000
+                except ValueError:
+                    users = 5000
+            else:
+                users = 5000
+        else:
+            try:
+                users = int(users_val)
+            except Exception:
+                users = 5000
+
+        storage_gb = 100
         
         # Scaling tier calculations
         if users < 5000:

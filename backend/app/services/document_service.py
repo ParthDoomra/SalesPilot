@@ -28,16 +28,18 @@ class DocumentService:
         
         if ext == "pdf":
             try:
+                import fitz  # PyMuPDF
                 pdf_file = io.BytesIO(file_content)
-                reader = PdfReader(pdf_file)
+                doc = fitz.open(stream=pdf_file, filetype="pdf")
                 text = ""
-                for page in reader.pages:
-                    page_text = page.extract_text()
+                for page in doc:
+                    page_text = page.get_text()
                     if page_text:
                         text += page_text + "\n"
+                doc.close()
                 return text
             except Exception as e:
-                logger.error(f"Error parsing PDF: {e}")
+                logger.error(f"Error parsing PDF with PyMuPDF: {e}")
                 raise ValueError("Failed to parse PDF document.")
                 
         elif ext in ["docx", "doc"]:
@@ -73,7 +75,7 @@ class DocumentService:
         doc.add_heading(f"SalesPilot AI Enterprise Solution Proposal", 0)
         doc.add_paragraph(f"Client: {project.get('clientName', 'N/A')} ({project.get('company', 'N/A')})")
         doc.add_paragraph(f"Industry: {project.get('industry', 'N/A')} | Country: {project.get('country', 'N/A')}")
-        doc.add_paragraph(f"Budget Limit: ${project.get('budget', 0):,}")
+        doc.add_paragraph(f"Budget Limit: ₹{project.get('budget', 0):,}")
         doc.add_paragraph(f"Timeline: {project.get('timeline', 'N/A')}")
         
         # Sections
@@ -104,19 +106,19 @@ class DocumentService:
         # 4. Pricing & Bill of Materials
         doc.add_heading("4. Financial Estimate (Bill of Materials)", level=1)
         pricing = content.get("pricing", {})
-        doc.add_paragraph(f"Total Estimated Monthly Cost: ${pricing.get('monthlyTotal', 0.0):,}")
-        doc.add_paragraph(f"Total Estimated Annual Cost: ${pricing.get('annualTotal', 0.0):,}")
+        doc.add_paragraph(f"Total Estimated Monthly Cost: ₹{pricing.get('monthlyTotal', 0.0):,}")
+        doc.add_paragraph(f"Total Estimated Annual Cost: ₹{pricing.get('annualTotal', 0.0):,}")
         
         # Table of costs
         table = doc.add_table(rows=1, cols=2)
         hdr_cells = table.rows[0].cells
         hdr_cells[0].text = 'Service Category'
-        hdr_cells[1].text = 'Monthly Cost (USD)'
+        hdr_cells[1].text = 'Monthly Cost (INR)'
         
         for cat, val in pricing.get("breakdown", {}).items():
             row_cells = table.add_row().cells
             row_cells[0].text = cat.capitalize()
-            row_cells[1].text = f"${val:,}"
+            row_cells[1].text = f"₹{val:,}"
 
         # 5. Resilience & Recovery Plan
         doc.add_heading("5. Resilience & Failure Recovery Report", level=1)
@@ -167,27 +169,27 @@ class DocumentService:
         pdf.cell(0, 10, "2. Project Specifications", ln=True)
         pdf.set_font("helvetica", "", 10)
         pdf.cell(0, 6, f"Preferred Cloud Provider: {project.get('preferredCloud', 'Azure')}", ln=True)
-        pdf.cell(0, 6, f"Client Budget Cap: ${project.get('budget', 0):,} USD", ln=True)
+        pdf.cell(0, 6, f"Client Budget Cap: {project.get('budget', 0):,} INR", ln=True)
         pdf.cell(0, 6, f"Project Timeline: {project.get('timeline', 'N/A')}", ln=True)
         pdf.ln(5)
-
+ 
         # 3. Pricing
         pdf.set_font("helvetica", "B", 14)
         pdf.cell(0, 10, "3. Cost Estimates (Monthly)", ln=True)
         pdf.set_font("helvetica", "", 10)
         pricing = content.get("pricing", {})
-        pdf.cell(0, 6, f"Total Monthly Cost: ${pricing.get('monthlyTotal', 0.0):,} USD", ln=True)
-        pdf.cell(0, 6, f"Total Annualized Cost: ${pricing.get('annualTotal', 0.0):,} USD", ln=True)
+        pdf.cell(0, 6, f"Total Monthly Cost: {pricing.get('monthlyTotal', 0.0):,} INR", ln=True)
+        pdf.cell(0, 6, f"Total Annualized Cost: {pricing.get('annualTotal', 0.0):,} INR", ln=True)
         pdf.ln(2)
         
         # Draw small pricing table
         pdf.set_font("helvetica", "B", 10)
         pdf.cell(80, 8, "Category", border=1)
-        pdf.cell(60, 8, "Estimated Cost (USD)", border=1, ln=True)
+        pdf.cell(60, 8, "Estimated Cost (INR)", border=1, ln=True)
         pdf.set_font("helvetica", "", 10)
         for cat, val in pricing.get("breakdown", {}).items():
             pdf.cell(80, 8, cat.capitalize(), border=1)
-            pdf.cell(60, 8, f"${val:,}", border=1, ln=True)
+            pdf.cell(60, 8, f"{val:,}", border=1, ln=True)
         pdf.ln(5)
 
         # 4. Resilience
@@ -345,13 +347,13 @@ class DocumentService:
         tf_left.word_wrap = True
         
         p = tf_left.paragraphs[0]
-        p.text = "Monthly Investment"
+        p.text = "Monthly Investment (INR)"
         p.font.name = 'Helvetica'
         p.font.size = Pt(18)
         p.font.color.rgb = GREY_TEXT
         
         p_val = tf_left.add_paragraph()
-        p_val.text = f"${pricing.get('monthlyTotal', 0.0):,}"
+        p_val.text = f"₹{pricing.get('monthlyTotal', 0.0):,}"
         p_val.font.name = 'Helvetica'
         p_val.font.size = Pt(40)
         p_val.font.bold = True
@@ -359,18 +361,18 @@ class DocumentService:
         p_val.space_after = Pt(24)
         
         p_ann = tf_left.add_paragraph()
-        p_ann.text = "Annualized Total"
+        p_ann.text = "Annualized Total (INR)"
         p_ann.font.name = 'Helvetica'
         p_ann.font.size = Pt(18)
         p_ann.font.color.rgb = GREY_TEXT
         
         p_ann_val = tf_left.add_paragraph()
-        p_ann_val.text = f"${pricing.get('annualTotal', 0.0):,}"
+        p_ann_val.text = f"₹{pricing.get('annualTotal', 0.0):,}"
         p_ann_val.font.name = 'Helvetica'
         p_ann_val.font.size = Pt(32)
         p_ann_val.font.bold = True
         p_ann_val.font.color.rgb = CYAN
-
+ 
         # Right side: Detail List
         tx_box_right = slide.shapes.add_textbox(Inches(5.0), Inches(2.0), Inches(4.5), Inches(4.0))
         tf_right = tx_box_right.text_frame
@@ -378,7 +380,7 @@ class DocumentService:
         
         for item_cat, item_val in pricing.get("breakdown", {}).items():
             p_item = tf_right.add_paragraph() if tf_right.text else tf_right.paragraphs[0]
-            p_item.text = f"• {item_cat.capitalize()}: ${item_val:,} / mo"
+            p_item.text = f"• {item_cat.capitalize()}: ₹{item_val:,} / mo"
             p_item.font.name = 'Helvetica'
             p_item.font.size = Pt(18)
             p_item.font.color.rgb = WHITE
@@ -430,7 +432,7 @@ class DocumentService:
         tf.word_wrap = True
         
         p = tf.paragraphs[0]
-        p.text = f"Original Cost: ${neg.get('originalCost', pricing.get('monthlyTotal', 0.0)):,} | Optimized Cost: ${neg.get('optimizedCost', 0.0):,}"
+        p.text = f"Original Cost: ₹{neg.get('originalCost', pricing.get('monthlyTotal', 0.0)):,} | Optimized Cost: ₹{neg.get('optimizedCost', 0.0):,}"
         p.font.name = 'Helvetica'
         p.font.size = Pt(20)
         p.font.bold = True

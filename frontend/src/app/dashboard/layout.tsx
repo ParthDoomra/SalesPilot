@@ -64,8 +64,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientName || !company || !description) {
-      setFormError("Please fill out client name, company name, and brief description.");
+    if (!clientName || !company) {
+      setFormError("Please fill out client name and company name.");
       return;
     }
     setFormError('');
@@ -83,7 +83,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           budget: parseFloat(budget) || 0.0,
           timeline,
           preferredCloud,
-          description
+          description: description || "Workspace Ingestion Solution"
         })
       });
       setNewProjectOpen(false);
@@ -304,38 +304,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-400 mb-1">Industry Vertical</label>
-                  <select 
-                    value={industry} 
-                    onChange={e => setIndustry(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 outline-none focus:border-cyan-500"
-                  >
-                    <option>Finance & Banking</option>
-                    <option>Healthcare</option>
-                    <option>Retail & E-commerce</option>
-                    <option>IT Services</option>
-                    <option>Manufacturing</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-400 mb-1">Preferred Cloud Provider</label>
-                  <select 
-                    value={preferredCloud} 
-                    onChange={e => setPreferredCloud(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 outline-none focus:border-cyan-500"
-                  >
-                    <option>Azure</option>
-                    <option>AWS</option>
-                    <option>GCP</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-slate-400 mb-1">Industry Vertical</label>
+                <select 
+                  value={industry} 
+                  onChange={e => setIndustry(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 outline-none focus:border-cyan-500"
+                >
+                  <option>Finance & Banking</option>
+                  <option>Healthcare</option>
+                  <option>Retail & E-commerce</option>
+                  <option>IT Services</option>
+                  <option>Manufacturing</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-400 mb-1">Target Budget Cap (USD/mo)</label>
+                  <label className="block text-slate-400 mb-1">Target Budget Cap (INR/mo)</label>
                   <input 
                     type="number" 
                     value={budget} 
@@ -354,17 +340,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 outline-none focus:border-cyan-500"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-400 mb-1">Architectural Scope & Goals</label>
-                <textarea 
-                  rows={3}
-                  value={description} 
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder="Summarize active requirements, compliance needs, target database workloads, or integrations..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 outline-none focus:border-cyan-500"
-                />
               </div>
 
               <div className="pt-4 flex gap-3">
