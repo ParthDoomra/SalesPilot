@@ -1,50 +1,155 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with this repository.
 
-## Project Overview
+# Project Overview
 
-**SalesPilot** is a new project in early setup stages. As of the initial commit, the repository contains only a README.
+## SalesPilot
 
-### Branch Structure
+SalesPilot is an AI-powered Sales Engineer platform that helps businesses design cost-optimized cloud architectures.
 
-- `main` — main development branch
-- `A`, `B`, `C`, `D` — feature/work branches
-- Current working branch: `C`
+The system collects business requirements through an AI conversation, validates missing information, generates cloud architectures, estimates pricing using live cloud provider APIs (Azure, AWS, GCP), recommends optimizations, and creates proposal-ready documentation.
 
-## Getting Started (When Project Structure is Added)
+Primary users:
+- Sales Engineers
+- Solution Architects
+- Cloud Consultants
+- Pre-Sales Teams
 
-Once the project is scaffolded, add the following sections with actual commands:
+---
 
-### Build & Development
-- How to install dependencies
-- How to start the development server
-- How to build for production
-- Environment setup (`.env` files, etc.)
+# Core Workflow
 
-### Testing & Quality
-- How to run tests (full suite and single tests)
-- How to run linting/formatting
-- How to run type checking (if applicable)
+1. User starts a new solution.
+2. AI Requirement Agent interviews the customer.
+3. Missing information is requested automatically.
+4. Requirements are structured into a standardized JSON format.
+5. Architecture Generator creates a cloud solution.
+6. Pricing Engine fetches live pricing from cloud provider APIs.
+7. Cost Optimizer suggests cheaper alternatives.
+8. AI negotiates trade-offs (cost vs performance vs availability).
+9. Proposal Generator creates architecture diagrams, BOM, pricing, and documentation.
+10. User exports the final proposal.
 
-### Code Structure
-- High-level architecture (frontend/backend separation, data flow, key modules)
-- Technology stack (frameworks, languages, key libraries)
-- Important patterns or conventions to follow
+---
 
-## Development Guidance
+# Planned AI Agents
 
-When working on this project:
-1. Keep commits focused and atomic
-2. Reference the issue/ticket number in commit messages when applicable
-3. Test changes locally before pushing
-4. Keep PRs reasonably scoped for easier review
-5. Update documentation when adding features or changing architecture
+- Requirement Collection Agent
+- Requirement Validation Agent
+- Architecture Generator
+- Pricing Agent
+- Cost Optimization Agent
+- Proposal Generator
+- Follow-up Agent
 
-## Future Setup Notes
+---
 
-Watch for these items as the project evolves:
-- Configuration management strategy (environment variables, config files)
-- Database schema or data models (if applicable)
-- API documentation or interface specifications
-- Deployment/CI-CD pipeline setup
+# Tech Stack
+
+Frontend:
+
+
+Backend:
+
+
+Database:
+
+
+Authentication:
+
+
+AI:
+
+
+Cloud Pricing APIs:
+- Azure Retail Prices API
+- AWS Pricing API
+- Google Cloud Billing Catalog API
+
+Storage:
+
+
+---
+
+# Branch Structure
+
+- main — production
+- A — feature branch
+- B — feature branch
+- C — current working branch
+- D — feature branch
+
+---
+
+# Current Status
+
+Project is in the initial setup phase.
+
+Current repository contains only the README.
+
+Project structure will be added incrementally.
+
+---
+
+# Development Guidelines
+
+- Keep commits focused and atomic.
+- Reference issue numbers when applicable.
+- Test locally before pushing.
+- Keep pull requests small.
+- Update documentation when changing architecture.
+
+---
+
+# Build & Development
+
+(To be completed after project scaffolding.)
+
+Include:
+
+- dependency installation
+- development server
+- production build
+- environment variables
+
+---
+
+# Testing
+
+(To be completed.)
+
+Include:
+
+- unit tests
+- integration tests
+- linting
+- formatting
+- type checking
+
+---
+
+# Code Structure
+
+(To be completed.)
+
+Document:
+
+- frontend architecture
+- backend architecture
+- API structure
+- database schema
+- shared types
+- coding conventions
+
+---
+
+# Future Notes
+
+Watch for:
+
+- Configuration management
+- Database schema
+- API documentation
+- CI/CD pipeline
+- Deployment strategy
