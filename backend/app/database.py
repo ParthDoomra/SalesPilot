@@ -10,12 +10,15 @@ from app.config import settings
 
 logger = logging.getLogger("salespilot.database")
 
-# In-Memory database fallback for Demo Mode
+# In-Memory database fallback for Demo Mode with Disk Persistence
+import os
+
 class MockDocumentReference:
-    def __init__(self, collection_name: str, doc_id: str, db_store: Dict[str, Dict[str, Any]]):
+    def __init__(self, collection_name: str, doc_id: str, db_store: Dict[str, Dict[str, Any]], client: 'MockFirestoreClient'):
         self.collection_name = collection_name
         self.id = doc_id
         self.db_store = db_store
+        self.client = client
 
     def get(self):
         class MockDocumentSnapshot:
@@ -37,6 +40,7 @@ class MockDocumentReference:
             self.db_store[self.collection_name][self.id].update(data)
         else:
             self.db_store[self.collection_name][self.id] = data
+        self.client.save_to_disk()
         return self
 
     def update(self, data: Dict[str, Any]):
@@ -45,18 +49,20 @@ class MockDocumentReference:
     def delete(self):
         if self.collection_name in self.db_store and self.id in self.db_store[self.collection_name]:
             del self.db_store[self.collection_name][self.id]
+        self.client.save_to_disk()
         return self
 
 class MockCollectionReference:
-    def __init__(self, collection_name: str, db_store: Dict[str, Dict[str, Any]]):
+    def __init__(self, collection_name: str, db_store: Dict[str, Dict[str, Any]], client: 'MockFirestoreClient'):
         self.collection_name = collection_name
         self.db_store = db_store
+        self.client = client
 
     def document(self, doc_id: str = None):
         if not doc_id:
             import uuid
             doc_id = str(uuid.uuid4())
-        return MockDocumentReference(self.collection_name, doc_id, self.db_store)
+        return MockDocumentReference(self.collection_name, doc_id, self.db_store, self.client)
 
     def stream(self):
         docs = []
@@ -76,12 +82,13 @@ class MockCollectionReference:
     def where(self, field_path: str, op_string: str, value: Any):
         # Basic mock filtering
         class FilteredQuery:
-            def __init__(self, collection_name: str, db_store: Dict[str, Dict[str, Any]], field: str, op: str, val: Any):
+            def __init__(self, collection_name: str, db_store: Dict[str, Dict[str, Any]], field: str, op: str, val: Any, client: 'MockFirestoreClient'):
                 self.collection_name = collection_name
                 self.db_store = db_store
                 self.field = field
                 self.op = op
                 self.val = val
+                self.client = client
 
             def stream(self):
                 docs = []
@@ -104,18 +111,36 @@ class MockCollectionReference:
                                 return self._data
                         docs.append(MockDocumentSnapshot(doc_id, data))
                 return docs
-        return FilteredQuery(self.collection_name, self.db_store, field_path, op_string, value)
+        return FilteredQuery(self.collection_name, self.db_store, field_path, op_string, value, self.client)
 
 class MockFirestoreClient:
     def __init__(self):
         self.db_store: Dict[str, Dict[str, Any]] = {}
+        self.db_filepath = os.path.join(os.path.dirname(__file__), "..", "mock_db.json")
         self._load_seed_data()
 
     def collection(self, collection_name: str):
-        return MockCollectionReference(collection_name, self.db_store)
+        return MockCollectionReference(collection_name, self.db_store, self)
+
+    def save_to_disk(self):
+        try:
+            with open(self.db_filepath, "w") as f:
+                json.dump(self.db_store, f, indent=2)
+        except Exception as e:
+            logger.error(f"Failed to save mock db to disk: {e}")
 
     def _load_seed_data(self):
-        # Seed basic data for quick mock UI usage
+        # Check if persistent file exists
+        if os.path.exists(self.db_filepath):
+            try:
+                with open(self.db_filepath, "r") as f:
+                    self.db_store = json.load(f)
+                logger.info(f"Loaded persistent mock database from disk: {self.db_filepath}")
+                return
+            except Exception as e:
+                logger.error(f"Failed to load mock db from disk: {e}")
+
+        # Fallback default seeding
         self.db_store["users"] = {
             "mock-admin-uid": {
                 "uid": "mock-admin-uid",
@@ -141,6 +166,55 @@ class MockFirestoreClient:
                 "activeCredits": 1000
             }
         }
+        
+        # Seed a default demo project as well
+        default_id = "78e593e0-067b-4223-a544-0b76b69be9db"
+        welcome_text = (
+            "Hello! I am your Senior Business Analyst and Presales Architect. I've loaded your project details for "
+            "**Acme Corp Cloud Migration** at **Acme Corp**.\n\n"
+            "Based on the project initialization details, we have set the industry to **Retail**, "
+            "preferred cloud to **Azure**, budget to **$50,000.00/mo**, and timeline to **6 months**.\n\n"
+            "Who are your target users for this platform?"
+        )
+        self.db_store["projects"] = {
+            default_id: {
+                "id": default_id,
+                "orgId": "mock-org-123",
+                "name": "Acme Corp Cloud Migration",
+                "clientName": "John Doe",
+                "company": "Acme Corp",
+                "industry": "Retail",
+                "country": "US",
+                "budget": 50000.0,
+                "timeline": "6 months",
+                "preferredCloud": "Azure",
+                "description": "Migrate core retail catalog database to cloud.",
+                "status": "Draft",
+                "createdAt": time.time(),
+                "updatedAt": time.time(),
+                "owner": "se@salespilot.ai"
+            }
+        }
+        self.db_store["requirements"] = {
+            default_id: {
+                "industry": "Retail",
+                "preferredCloud": "Azure",
+                "budget": 50000.0,
+                "timeline": "6 months",
+                "businessGoal": "Migrate core retail catalog database to cloud.",
+                "confirmed": False
+            }
+        }
+        self.db_store["conversations"] = {
+            default_id: {
+                "projectId": default_id,
+                "history": [
+                    {"role": "assistant", "content": welcome_text}
+                ],
+                "updatedAt": time.time()
+            }
+        }
+        self.save_to_disk()
 
 class MockBlob:
     def __init__(self, name: str):

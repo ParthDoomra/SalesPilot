@@ -28,16 +28,18 @@ class DocumentService:
         
         if ext == "pdf":
             try:
+                import fitz  # PyMuPDF
                 pdf_file = io.BytesIO(file_content)
-                reader = PdfReader(pdf_file)
+                doc = fitz.open(stream=pdf_file, filetype="pdf")
                 text = ""
-                for page in reader.pages:
-                    page_text = page.extract_text()
+                for page in doc:
+                    page_text = page.get_text()
                     if page_text:
                         text += page_text + "\n"
+                doc.close()
                 return text
             except Exception as e:
-                logger.error(f"Error parsing PDF: {e}")
+                logger.error(f"Error parsing PDF with PyMuPDF: {e}")
                 raise ValueError("Failed to parse PDF document.")
                 
         elif ext in ["docx", "doc"]:
