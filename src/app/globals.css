@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --font-display: var(--font-space-grotesk);
+  --font-body: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+
+  --radius: 0.75rem;
+
+  /* Light mode */
+  --background: #F7F8FA;
+  --surface: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --border-subtle: #E5E7EC;
+  --border-default: #D8DBE2;
+  --foreground: #12161F;
+  --muted: #5D6472;
+  --muted-foreground: #6E7585;
+
+  --signal: #2E6BE6;
+  --signal-foreground: #FFFFFF;
+  --signal-soft: #EAF0FE;
+
+  --amber: #C97A1A;
+  --amber-soft: #FCEFDD;
+
+  --success: #1B8A5A;
+  --success-soft: #E5F5EE;
+  --danger: #D6432F;
+  --danger-soft: #FBEAE7;
+
+  --grid-line: #E5E7EC;
+}
+
+.dark {
+  --background: #0A0D14;
+  --surface: #10141D;
+  --surface-raised: #151A25;
+  --border-subtle: #1E2430;
+  --border-default: #2A3140;
+  --foreground: #E8EAED;
+  --muted: #8A93A6;
+  --muted-foreground: #97A0B2;
+
+  --signal: #5A8DFF;
+  --signal-foreground: #0A0D14;
+  --signal-soft: #16243F;
+
+  --amber: #F2A93B;
+  --amber-soft: #2E2210;
+
+  --success: #3FCB8C;
+  --success-soft: #10261D;
+  --danger: #F16A56;
+  --danger-soft: #2E1613;
+
+  --grid-line: #171C27;
+}
+
+@theme inline {
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+  --color-signal-soft: var(--signal-soft);
+
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --color-grid-line: var(--grid-line);
+
+  --radius-sm: calc(var(--radius) - 0.35rem);
+  --radius-md: calc(var(--radius) - 0.15rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.35rem);
+}
+
+* {
+  border-color: var(--border-subtle);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-mono-data {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+/* Blueprint grid backdrop used on landing hero + empty states */
+.schema-grid {
+  background-image:
+    linear-gradient(to right, var(--color-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-grid-line) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+::selection {
+  background: var(--color-signal-soft);
+  color: var(--color-signal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-default); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-muted); }
