@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { Menu, LogOut, User, Settings as SettingsIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -61,8 +60,8 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => {
-                signOut();
+              onClick={async () => {
+                await signOut();
                 router.push("/login");
               }}
               className="text-danger focus:bg-danger-soft"
