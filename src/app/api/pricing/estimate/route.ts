@@ -9,10 +9,26 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getArchitectureByProject, saveArchitecture } from '@/services/firebase/architectures';
-import { getRequirement } from '@/services/firebase/requirements';
+import { getRequirement, saveRequirement } from '@/services/firebase/requirements';
 import { estimatePricing } from '@/services/ai/pricing';
+import { currencyService } from '@/services/currency';
 import type { ArchitectureModel, RequirementModel } from '@/types';
 import { classifyError } from '@/utils/error-handler';
+
+/**
+ * Populate the 24h exchange-rate cache before the (synchronous) Pricing Engine
+ * converts the customer's budget through CurrencyService. Failures are ignored
+ * here: on API-down-with-prior-cache the cached rate is used, and if a budget
+ * conversion is genuinely needed with no cached rate at all, the estimator
+ * throws a meaningful error that the handlers below classify into a 500.
+ */
+async function primeExchangeRates(): Promise<void> {
+  try {
+    await currencyService.ensureRatesLoaded();
+  } catch {
+    // Intentionally swallowed — see estimator error handling.
+  }
+}
 
 /**
  * POST /api/pricing/estimate
@@ -38,6 +54,10 @@ export async function POST(request: NextRequest) {
     await saveArchitecture(architecture);
 
     const requirement = bodyRequirement ?? (await getRequirement(architecture.projectId));
+    if (bodyRequirement) {
+      await saveRequirement(bodyRequirement);
+    }
+    await primeExchangeRates();
     const estimate = estimatePricing(architecture, requirement);
     return NextResponse.json({ estimate });
   } catch (err) {
@@ -65,6 +85,7 @@ export async function GET(request: NextRequest) {
     const requirement = await getRequirement(projectId);
 
     // Combine both inputs → pricing report.
+    await primeExchangeRates();
     const estimate = estimatePricing(architecture, requirement);
     return NextResponse.json({ estimate });
   } catch (err) {

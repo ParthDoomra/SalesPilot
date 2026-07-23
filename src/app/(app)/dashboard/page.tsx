@@ -5,14 +5,11 @@ import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { StatCards } from "@/components/dashboard/stat-cards";
-import { CostTrendChart } from "@/components/dashboard/cost-trend-chart";
+import { PipelineChart } from "@/components/dashboard/pipeline-chart";
 import { RecentProposals } from "@/components/dashboard/recent-proposals";
-import {
-  AIActivityWidget,
-  RecentConversationsWidget,
-  TeamMembersWidget,
-  NotificationsWidget,
-} from "@/components/dashboard/side-widgets";
+import { RecentProjects, LatestPricingReports, ActivityTimeline } from "@/components/dashboard/dashboard-lists";
+import { CloudProviderDistribution, ArchitectureTypeDistribution } from "@/components/dashboard/distributions";
+import { AIActivityWidget, RecentConversationsWidget } from "@/components/dashboard/side-widgets";
 import { useAuth } from "@/lib/auth";
 
 export default function DashboardPage() {
@@ -38,14 +35,20 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="flex flex-col gap-6 lg:col-span-2">
-            <CostTrendChart />
+            <PipelineChart />
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <RecentProjects />
+              <LatestPricingReports />
+            </div>
             <RecentProposals />
           </div>
+
           <div className="flex flex-col gap-6">
             <AIActivityWidget />
+            <CloudProviderDistribution />
+            <ArchitectureTypeDistribution />
             <RecentConversationsWidget />
-            <TeamMembersWidget />
-            <NotificationsWidget />
+            <ActivityTimeline />
           </div>
         </div>
       </div>

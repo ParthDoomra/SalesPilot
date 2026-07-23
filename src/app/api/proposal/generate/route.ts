@@ -12,18 +12,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { saveArchitecture } from '@/services/firebase/architectures';
-import { getRequirement } from '@/services/firebase/requirements';
+import { getRequirement, saveRequirement } from '@/services/firebase/requirements';
 import { estimatePricing } from '@/services/ai/pricing';
 import { buildProposal } from '@/services/ai/proposal/builder';
-import type { ArchitectureModel } from '@/types';
+import type { ArchitectureModel, RequirementModel } from '@/types';
 import { classifyError } from '@/utils/error-handler';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { architecture, customerName } = body as {
+    const { architecture, customerName, requirement: bodyRequirement } = body as {
       architecture?: ArchitectureModel;
       customerName?: string;
+      requirement?: RequirementModel | null;
     };
 
     if (!architecture || !architecture.projectId || !Array.isArray(architecture.options) || architecture.options.length === 0) {
@@ -34,7 +35,10 @@ export async function POST(request: NextRequest) {
     await saveArchitecture(architecture);
 
     // Combine: Requirement JSON (server) + selected Architecture (body) + Pricing.
-    const requirement = await getRequirement(architecture.projectId);
+    const requirement = bodyRequirement ?? (await getRequirement(architecture.projectId));
+    if (bodyRequirement) {
+      await saveRequirement(bodyRequirement);
+    }
     const estimate = estimatePricing(architecture, requirement);
     const proposal = buildProposal({ architecture, requirement, estimate, customerName });
 

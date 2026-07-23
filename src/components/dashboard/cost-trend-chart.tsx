@@ -2,6 +2,8 @@
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useCurrency } from "@/hooks/use-currency";
 
 const DATA = [
   { month: "Feb", cost: 38200 },
@@ -13,6 +15,9 @@ const DATA = [
 ];
 
 export function CostTrendChart() {
+  const { costCurrency } = useDashboardData();
+  const { format } = useCurrency();
+
   return (
     <Card>
       <CardHeader>
@@ -35,8 +40,8 @@ export function CostTrendChart() {
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(v) => `$${v / 1000}k`}
-              width={44}
+              tickFormatter={(v) => `${format(Number(v) / 1000, costCurrency, { maximumFractionDigits: 1 })}k`}
+              width={54}
             />
             <Tooltip
               contentStyle={{
@@ -45,7 +50,10 @@ export function CostTrendChart() {
                 borderRadius: 8,
                 fontSize: 12,
               }}
-              formatter={(value) => [`$${Number(Array.isArray(value) ? value[0] : value ?? 0).toLocaleString()}`, "Estimated cost"]}
+              formatter={(value) => [
+                format(Number(Array.isArray(value) ? value[0] : value ?? 0), costCurrency),
+                "Estimated cost",
+              ]}
             />
             <Area type="monotone" dataKey="cost" stroke="var(--color-signal)" strokeWidth={2} fill="url(#costFill)" />
           </AreaChart>

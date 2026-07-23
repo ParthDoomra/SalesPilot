@@ -15,6 +15,8 @@ import {
 import { ProjectCard } from "@/components/projects/project-card";
 import { ProjectDialog } from "@/components/projects/project-dialog";
 import { useProjectsStore } from "@/lib/projects-store";
+import { useProjectPricingStore } from "@/lib/project-pricing-store";
+import { syncAllProjectsFromPricingStore } from "@/lib/project-currency";
 import type { Project, ProjectStatus } from "@/lib/types";
 
 const STATUS_FILTERS: (ProjectStatus | "All")[] = [
@@ -28,6 +30,12 @@ const STATUS_FILTERS: (ProjectStatus | "All")[] = [
 
 export default function ProjectsPage() {
   const { projects } = useProjectsStore();
+  const pricingByProject = useProjectPricingStore((s) => s.byProject);
+
+  React.useEffect(() => {
+    syncAllProjectsFromPricingStore();
+  }, [pricingByProject]);
+
   const [query, setQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<ProjectStatus | "All">("All");
   const [showArchived, setShowArchived] = React.useState(false);

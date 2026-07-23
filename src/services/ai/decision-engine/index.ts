@@ -10,6 +10,7 @@
 
 import type { RequirementModel, CompatibilityWarning, DecisionLog } from '@/types';
 import { createLogger } from '@/utils/logger';
+import { formatCurrency } from '@/utils/currency';
 
 const logger = createLogger('CloudDecisionEngine');
 
@@ -30,6 +31,7 @@ export function evaluateDecisions(req: RequirementModel): DecisionEngineResult {
   const users = typeof req.users?.value === 'number' ? req.users.value : 0;
   const employees = typeof req.employees?.value === 'number' ? req.employees.value : 0;
   const budget = typeof req.budget?.value === 'number' ? req.budget.value : 0;
+  const budgetCurrency = (req.budgetCurrency?.value ?? 'USD').toString();
 
   const availabilityText = (req.availability?.value ?? '').toString().toLowerCase();
   const drText = (req.disasterRecovery?.value ?? '').toString().toLowerCase();
@@ -97,7 +99,7 @@ export function evaluateDecisions(req: RequirementModel): DecisionEngineResult {
       id: `warn_${Date.now()}_1`,
       severity: 'warning',
       title: 'Budget vs. High Availability & DR Conflict',
-      description: `Target monthly budget ($${budget.toLocaleString()}) may be constrained for a full Enterprise Multi-Region DR setup.`,
+      description: `Target monthly budget (${formatCurrency(budget, budgetCurrency)}) may be constrained for a full Enterprise Multi-Region DR setup.`,
       mitigation: 'Recommend starting with Option C (Budget Serverless HA) or Option B (Balanced Single-Region Multi-AZ) before scaling to Multi-Region DR.',
       fieldConflict: 'budget',
     });

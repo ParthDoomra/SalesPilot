@@ -7,12 +7,15 @@
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import type { CloudServiceNode } from '@/types';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface ServiceCardListProps {
   services: CloudServiceNode[];
+  currencyCode?: string;
 }
 
-export function ServiceCardList({ services }: ServiceCardListProps) {
+export function ServiceCardList({ services, currencyCode = 'USD' }: ServiceCardListProps) {
+  const { formatRangeFromUsd } = useCurrency();
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {services.map((srv) => {
@@ -58,7 +61,7 @@ export function ServiceCardList({ services }: ServiceCardListProps) {
               <div className="mt-4 border-t border-border-subtle/50 pt-2.5 flex items-center justify-between text-[10px]">
                 <span className="text-muted-foreground">Est. Cost:</span>
                 <span className="font-mono-data font-semibold text-foreground">
-                  {srv.estimatedMonthlyCostRange}
+                  {formatRangeFromUsd(srv.estimatedMonthlyCostRange, currencyCode)}
                 </span>
               </div>
             )}

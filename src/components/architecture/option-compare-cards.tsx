@@ -9,15 +9,18 @@ import { Star, Award, Zap, Shield, Check } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { ArchitectureOption } from '@/types';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface OptionCompareCardsProps {
   options: ArchitectureOption[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   isUpdating: boolean;
+  currencyCode?: string;
 }
 
-export function OptionCompareCards({ options, selectedId, onSelect, isUpdating }: OptionCompareCardsProps) {
+export function OptionCompareCards({ options, selectedId, onSelect, isUpdating, currencyCode = 'USD' }: OptionCompareCardsProps) {
+  const { formatRangeFromUsd } = useCurrency();
   // Sort options so that balanced/recommended is first, then performance, then budget
   const sorted = [...options].sort((a, b) => {
     const order = { balanced: 0, performance: 1, budget: 2 };
@@ -76,7 +79,7 @@ export function OptionCompareCards({ options, selectedId, onSelect, isUpdating }
                     ))}
                   </div>
                   <span className="font-mono-data text-xs font-semibold text-foreground">
-                    {opt.costEstimateRange}
+                    {formatRangeFromUsd(opt.costEstimateRange, currencyCode)}
                   </span>
                 </div>
 

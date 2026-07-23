@@ -7,6 +7,7 @@
 import * as React from 'react';
 import { Sparkles, Loader2, Download, Layout, Calculator, Check } from 'lucide-react';
 import { useArchitecture } from '@/hooks/use-architecture';
+import { useProjectCurrency } from '@/hooks/use-project-currency';
 import { OptionCompareCards } from './option-compare-cards';
 import { ArchitectureCanvas } from './architecture-canvas';
 import { ServiceCardList } from './service-card-list';
@@ -41,6 +42,7 @@ export function ArchitectureContainer({ projectId, onGeneratePricing }: Architec
     selectProvider,
     setExportOpen,
   } = useArchitecture(projectId);
+  const { currency } = useProjectCurrency(projectId);
 
   const [activeTab, setActiveTab] = React.useState<'canvas' | 'services'>('canvas');
 
@@ -149,6 +151,7 @@ export function ArchitectureContainer({ projectId, onGeneratePricing }: Architec
                 selectedId={selectedOptionId}
                 onSelect={selectOption}
                 isUpdating={isUpdating}
+                currencyCode={currency}
               />
 
               {/* Selected architecture + hand-off to Pricing */}
@@ -215,7 +218,7 @@ export function ArchitectureContainer({ projectId, onGeneratePricing }: Architec
                   provider={architecture.selectedProvider}
                 />
               ) : (
-                <ServiceCardList services={selectedOption.services} />
+                <ServiceCardList services={selectedOption.services} currencyCode={currency} />
               )}
             </div>
           </div>

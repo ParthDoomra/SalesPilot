@@ -1,34 +1,27 @@
-/**
- * CostExplanation — the AI narrative for the estimate: a plain-language
- * explanation, the top cost drivers, and (only when over budget) actionable
- * recommendations to bring the architecture within the customer's budget.
- */
-
 "use client";
 
-import * as React from 'react';
 import { Sparkles, TrendingUp, Lightbulb } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { OptionCostEstimate } from '@/types';
-import { formatMoney } from './format';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface CostExplanationProps {
   option: OptionCostEstimate;
-  currencySymbol: string;
+  /** Customer's original currency to display in. */
+  currency?: string;
 }
 
-export function CostExplanation({ option, currencySymbol }: CostExplanationProps) {
+export function CostExplanation({ option, currency = 'USD' }: CostExplanationProps) {
+  const { formatFromUsd } = useCurrency();
+  const formatUsd = (n: number) => formatFromUsd(n, currency);
   const topDrivers = [...option.resources].sort((a, b) => b.monthlyCost - a.monthlyCost).slice(0, 3);
   const showRecommendations = option.recommendations.length > 0;
   const opt = option.optimization;
-  // Over budget → the recommendations are required fixes; otherwise they are
-  // optional savings opportunities.
   const isRequired = opt?.isRequired ?? false;
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      {/* AI explanation + top drivers */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-1.5">
@@ -58,7 +51,7 @@ export function CostExplanation({ option, currencySymbol }: CostExplanationProps
                     </div>
                   </div>
                   <span className="font-mono-data text-xs font-semibold text-foreground">
-                    {formatMoney(r.monthlyCost, currencySymbol)}/mo
+                    {formatUsd(r.monthlyCost)}/mo
                   </span>
                 </div>
               ))}
@@ -67,7 +60,6 @@ export function CostExplanation({ option, currencySymbol }: CostExplanationProps
         </CardContent>
       </Card>
 
-      {/* Recommendations — required fixes when over budget, optional savings otherwise */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-1.5">
@@ -98,16 +90,15 @@ export function CostExplanation({ option, currencySymbol }: CostExplanationProps
             </ul>
           )}
 
-          {/* Projected impact of applying the recommendations */}
           {opt && opt.estimatedMonthlySavings > 0 && (
             <div className="rounded-lg border border-border-subtle bg-surface-raised/40 p-3">
               <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                 Projected impact
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                <ImpactRow label="Estimated savings" value={`${formatMoney(opt.estimatedMonthlySavings, currencySymbol)}/mo`} tone="text-success" />
-                <ImpactRow label="New monthly cost" value={formatMoney(opt.newMonthlyCost, currencySymbol)} />
-                <ImpactRow label="New yearly cost" value={formatMoney(opt.newYearlyCost, currencySymbol)} />
+                <ImpactRow label="Estimated savings" value={`${formatUsd(opt.estimatedMonthlySavings)}/mo`} tone="text-success" />
+                <ImpactRow label="New monthly cost" value={formatUsd(opt.newMonthlyCost)} />
+                <ImpactRow label="New yearly cost" value={formatUsd(opt.newYearlyCost)} />
                 <ImpactRow
                   label="Updated status"
                   value={opt.newStatus === 'within' ? 'Within Budget' : opt.newStatus === 'over' ? 'Over Budget' : '—'}

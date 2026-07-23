@@ -1,17 +1,10 @@
-/**
- * CategoryBreakdown — donut chart + itemised list of estimated monthly cost
- * grouped by category (Compute, Database, Storage, …).
- */
-
 "use client";
 
-import * as React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import type { CategoryCostGroup, PricingCategory } from '@/types';
-import { formatMoney } from './format';
+import { useCurrency } from '@/hooks/use-currency';
 
-/** Mid-tone categorical palette — legible on both light and dark themes. */
 const CATEGORY_COLORS: Record<PricingCategory, string> = {
   Compute: '#3b82f6',
   Database: '#f59e0b',
@@ -24,10 +17,13 @@ const CATEGORY_COLORS: Record<PricingCategory, string> = {
 
 interface CategoryBreakdownProps {
   categories: CategoryCostGroup[];
-  currencySymbol: string;
+  /** Customer's original currency to display in. */
+  currency?: string;
 }
 
-export function CategoryBreakdown({ categories, currencySymbol }: CategoryBreakdownProps) {
+export function CategoryBreakdown({ categories, currency = 'USD' }: CategoryBreakdownProps) {
+  const { formatFromUsd } = useCurrency();
+  const formatUsd = (n: number) => formatFromUsd(n, currency);
   const chartData = categories.map((c) => ({
     name: c.category,
     value: c.monthlyCost,
@@ -42,7 +38,6 @@ export function CategoryBreakdown({ categories, currencySymbol }: CategoryBreakd
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-2">
-          {/* Donut */}
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -70,7 +65,7 @@ export function CategoryBreakdown({ categories, currencySymbol }: CategoryBreakd
                     fontSize: 12,
                   }}
                   formatter={(value) => [
-                    `${formatMoney(Number(Array.isArray(value) ? value[0] : value ?? 0), currencySymbol)} / mo`,
+                    `${formatUsd(Number(Array.isArray(value) ? value[0] : value ?? 0))} / mo`,
                     'Estimated cost',
                   ]}
                 />
@@ -78,7 +73,6 @@ export function CategoryBreakdown({ categories, currencySymbol }: CategoryBreakd
             </ResponsiveContainer>
           </div>
 
-          {/* Legend / list */}
           <div className="space-y-2.5">
             {categories.map((c) => (
               <div key={c.category} className="text-xs">
@@ -91,7 +85,7 @@ export function CategoryBreakdown({ categories, currencySymbol }: CategoryBreakd
                     {c.category}
                   </span>
                   <span className="font-mono-data text-muted-foreground">
-                    {formatMoney(c.monthlyCost, currencySymbol)}/mo
+                    {formatUsd(c.monthlyCost)}/mo
                     <span className="ml-1.5 text-muted-foreground/60">({c.percentage}%)</span>
                   </span>
                 </div>

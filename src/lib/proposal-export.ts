@@ -8,6 +8,7 @@
  */
 
 import type { ProposalModel } from '@/types';
+import { logActivity } from '@/lib/activity-store';
 
 const esc = (v: unknown): string =>
   String(v ?? '')
@@ -16,16 +17,37 @@ const esc = (v: unknown): string =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-function money(n: number, symbol: string): string {
-  return `${symbol}${Math.round(n).toLocaleString()}`;
-}
+import { currencyService } from '@/services/currency';
 
 /** Builds a complete, standalone HTML document for the proposal. */
 export function buildProposalHtml(proposal: ProposalModel): string {
   const { executiveSummary: ex, selectedOption: opt, estimate } = proposal;
-  const sym = proposal.currencySymbol;
   const ba = opt.budgetAnalysis;
   const generated = proposal.generatedAt.slice(0, 10);
+
+  // Display all pricing in the customer's original currency; USD is internal.
+  const conversion = estimate?.currencyConversion ?? null;
+  const displayCurrency = conversion?.originalCurrency ?? ba.customerCurrency ?? proposal.currency;
+
+  // USD (internal) amount -> customer's original currency, via CurrencyService.
+  const money = (usd: number): string => {
+    try {
+      return currencyService.formatCurrency(
+        currencyService.convertFromUSDSync(usd, displayCurrency),
+        displayCurrency,
+      );
+    } catch {
+      return currencyService.formatCurrency(Math.round(usd), 'USD');
+    }
+  };
+  // Format a value already denominated in `code` (e.g. the customer budget).
+  const moneyIn = (amount: number, code: string): string => {
+    try {
+      return currencyService.formatCurrency(amount, code);
+    } catch {
+      return currencyService.formatCurrency(Math.round(amount), 'USD');
+    }
+  };
 
   const requirementsRows = proposal.requirements
     .map((r) => `<tr><th>${esc(r.label)}</th><td>${esc(r.value)}</td></tr>`)
@@ -46,14 +68,14 @@ export function buildProposalHtml(proposal: ProposalModel): string {
   const categoryRows = opt.categories
     .map(
       (c) =>
-        `<tr><td>${esc(c.category)}</td><td class="num">${money(c.monthlyCost, sym)}</td><td class="num">${c.percentage}%</td></tr>`,
+        `<tr><td>${esc(c.category)}</td><td class="num">${money(c.monthlyCost)}</td><td class="num">${c.percentage}%</td></tr>`,
     )
     .join('');
 
   const topDrivers = [...opt.resources]
     .sort((a, b) => b.monthlyCost - a.monthlyCost)
     .slice(0, 3)
-    .map((r) => `<li>${esc(r.serviceName)} — ${money(r.monthlyCost, sym)}/mo <span class="muted">(${esc(r.category)})</span></li>`)
+    .map((r) => `<li>${esc(r.serviceName)} — ${money(r.monthlyCost)}/mo <span class="muted">(${esc(r.category)})</span></li>`)
     .join('');
 
   const benefits = proposal.benefits.map((b) => `<div class="benefit">✔ ${esc(b)}</div>`).join('');
@@ -63,8 +85,8 @@ export function buildProposalHtml(proposal: ProposalModel): string {
     : `<p class="muted">This architecture fits the customer's budget — no cost-reduction changes are required.</p>`;
 
   const optimization = opt.optimization
-    ? `<p class="muted">Projected with optimizations: ${money(opt.optimization.newMonthlyCost, sym)}/mo
-       (save ${money(opt.optimization.estimatedMonthlySavings, sym)}/mo) — status ${
+    ? `<p class="muted">Projected with optimizations: ${money(opt.optimization.newMonthlyCost)}/mo
+       (save ${money(opt.optimization.estimatedMonthlySavings)}/mo) — status ${
         opt.optimization.newStatus === 'within' ? 'Within Budget' : opt.optimization.newStatus === 'over' ? 'Over Budget' : '—'
       }.</p>`
     : '';
@@ -155,7 +177,7 @@ export function buildProposalHtml(proposal: ProposalModel): string {
       in the ${esc(ex.industry)} sector. The business goal is to ${esc(ex.businessGoal.toLowerCase())}.
       We recommend the <strong>${esc(ex.architectureName)}</strong> architecture on
       <strong>${esc(ex.cloudProvider)}</strong>, estimated at
-      <strong>${money(opt.monthlyCost, sym)}/month</strong> (${money(opt.yearlyCost, sym)}/year).
+      <strong>${money(opt.monthlyCost)}/month</strong> (${money(opt.yearlyCost)}/year).
     </p>
 
     <!-- Requirements -->
@@ -179,13 +201,20 @@ export function buildProposalHtml(proposal: ProposalModel): string {
     <!-- Pricing -->
     <h2>5. Pricing Summary</h2>
     <div class="kpis">
-      <div class="kpi"><div class="label">Monthly Cost</div><div class="value">${money(opt.monthlyCost, sym)}</div></div>
-      <div class="kpi"><div class="label">Yearly Cost</div><div class="value">${money(opt.yearlyCost, sym)}</div></div>
+      <div class="kpi"><div class="label">Monthly Cost</div><div class="value">${money(opt.monthlyCost)}</div></div>
+      <div class="kpi"><div class="label">Yearly Cost</div><div class="value">${money(opt.yearlyCost)}</div></div>
       <div class="kpi"><div class="label">Customer Budget</div><div class="value">${
-        ba.hasBudget && ba.customerBudget !== null ? `${ba.customerCurrencySymbol}${ba.customerBudget.toLocaleString()}` : '—'
+        ba.hasBudget && ba.customerBudget !== null ? moneyIn(ba.customerBudget, displayCurrency) : '—'
       }</div></div>
       <div class="kpi"><div class="label">Budget Status</div><div class="value"><span class="status ${ba.status}">${budgetStatus}</span></div></div>
     </div>
+    <p class="muted">Pricing shown in ${esc(displayCurrency)}. Internal calculation currency: USD${
+      conversion
+        ? ` · 1 USD = ${esc(conversion.exchangeRate)} ${esc(conversion.originalCurrency)}${
+            conversion.exchangeRateDate ? ` (as of ${esc(conversion.exchangeRateDate)})` : ''
+          }`
+        : ''
+    }.</p>
     <table>
       <tr><th class="num" style="width:auto">Category</th><th class="num">Monthly</th><th class="num">Share</th></tr>
       ${categoryRows}
@@ -216,7 +245,7 @@ export function buildProposalHtml(proposal: ProposalModel): string {
     <h2>9. Next Steps</h2>
     <ul>${proposal.nextSteps.map((s) => `<li>${s.done ? '✔' : '▢'} ${esc(s.label)}</li>`).join('')}</ul>
 
-    <div class="footer">Generated by SalesPilot · ${esc(generated)} · Estimated figures in ${esc(estimate.currency)} — not live provider pricing.</div>
+    <div class="footer">Generated by SalesPilot · ${esc(generated)} · Estimated figures shown in ${esc(displayCurrency)} (calculated internally in USD) — not live provider pricing.</div>
   </div>
 </body>
 </html>`;
@@ -236,6 +265,13 @@ export function openProposalPrintWindow(proposal: ProposalModel, autoPrint = tru
     // document has no external assets, so a short delay is sufficient and more
     // reliable than the load event after document.write().
     win.setTimeout(() => win.print(), 350);
+    // Only Export/Print (autoPrint) counts as a download — plain preview ("View") does not.
+    logActivity(proposal.projectId, {
+      type: 'proposal_downloaded',
+      title: 'Proposal exported / printed',
+      detail: proposal.executiveSummary?.customerName,
+      source: 'user',
+    });
   }
 }
 
@@ -250,4 +286,10 @@ export function downloadProposalHtml(proposal: ProposalModel): void {
   link.download = `salespilot_proposal_${safeName}.html`;
   link.click();
   URL.revokeObjectURL(url);
+  logActivity(proposal.projectId, {
+    type: 'proposal_downloaded',
+    title: 'Proposal downloaded',
+    detail: proposal.executiveSummary?.customerName,
+    source: 'user',
+  });
 }

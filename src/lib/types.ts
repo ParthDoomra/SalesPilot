@@ -31,11 +31,21 @@ export interface Project {
   status: ProjectStatus;
   proposalStatus: ProposalStatus;
   monthlyEstimate: number;
-  /** Currency symbol for `monthlyEstimate`, taken from the pricing report (defaults to $). */
+  /** Monthly estimate in USD (canonical pricing value). */
+  monthlyEstimateUsd?: number;
+  /** @deprecated Display uses workspace currency; kept for migration. */
   estimateCurrencySymbol?: string;
+  /** @deprecated Display uses workspace currency; kept for migration. */
+  estimateCurrency?: string;
   createdAt: string;
   updatedAt: string;
   owner: string;
   archived: boolean;
   description: string;
+  /** Default cloud provider for new work in this project. */
+  defaultProvider?: string;
+  /** Default target region. */
+  defaultRegion?: string;
+  /** Default currency (ISO code) for this project. */
+  defaultCurrency?: string;
 }

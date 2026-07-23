@@ -2,14 +2,17 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Building2, Calendar, User, DollarSign } from 'lucide-react';
+import { ArrowLeft, Building2, Calendar, User, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ProjectStatusBadge } from '@/components/projects/status-badge';
+import { ProjectActivity } from '@/components/projects/project-activity';
+import { ProjectSettings } from '@/components/projects/project-settings';
 import { Badge } from '@/components/ui/badge';
 import { useProjectsStore } from '@/lib/projects-store';
+import { useProjectCurrency } from '@/hooks/use-project-currency';
 import { useAuth } from '@/lib/auth';
 
 // Lazy-loaded Phase 2 & 3 workspace components
@@ -51,6 +54,7 @@ export default function ProjectDetailPage() {
   const { projects } = useProjectsStore();
   const { user } = useAuth();
   const project = projects.find((p) => p.id === id);
+  const { currency: projectCurrency, formatFromUsd, monthlyEstimateUsd } = useProjectCurrency(id);
   const [activeTab, setActiveTab] = React.useState('Overview');
 
   // The project owner is the authenticated user's profile name (never a hardcoded value).
@@ -93,9 +97,9 @@ export default function ProjectDetailPage() {
         <MetaStat icon={User} label="Project Owner" value={projectOwner} />
         <MetaStat icon={Calendar} label="Last updated" value={project.updatedAt} />
         <MetaStat
-          icon={DollarSign}
+          icon={Wallet}
           label="Monthly estimate"
-          value={project.monthlyEstimate > 0 ? `${project.estimateCurrencySymbol ?? '$'}${project.monthlyEstimate.toLocaleString()}` : '—'}
+          value={monthlyEstimateUsd > 0 ? formatFromUsd(monthlyEstimateUsd, projectCurrency) : '—'}
         />
       </div>
 
@@ -213,8 +217,18 @@ export default function ProjectDetailPage() {
           </React.Suspense>
         </TabsContent>
 
+        {/* Activity — real timeline derived from project data + recorded events */}
+        <TabsContent value="Activity">
+          <ProjectActivity projectId={project.id} />
+        </TabsContent>
+
+        {/* Settings — functional project settings + danger zone */}
+        <TabsContent value="Settings">
+          <ProjectSettings project={project} />
+        </TabsContent>
+
         {/* Placeholder tabs for future phases */}
-        {TABS.filter((t) => !['Overview', 'Conversation', 'Requirements', 'Architecture', 'Pricing', 'Proposal'].includes(t)).map((t) => (
+        {TABS.filter((t) => !['Overview', 'Conversation', 'Requirements', 'Architecture', 'Pricing', 'Proposal', 'Activity', 'Settings'].includes(t)).map((t) => (
           <TabsContent key={t} value={t}>
             <PlaceholderTab name={t} />
           </TabsContent>

@@ -138,28 +138,35 @@ export function PricingContainer({ projectId }: PricingContainerProps) {
       )}
 
       {/* Report */}
-      {estimate && activeOption && !isLoading && (
+      {estimate && activeOption && !isLoading && (() => {
+        // Display everything in the customer's original currency. Internal
+        // amounts are USD; conversion/formatting go through CurrencyService.
+        const displayCurrency =
+          estimate.currencyConversion?.originalCurrency ??
+          activeOption.budgetAnalysis.customerCurrency ??
+          estimate.currency;
+        return (
         <div className="space-y-6">
           {/* Budget: customer budget, monthly/annual, difference, utilization, status */}
-          <BudgetSummary analysis={activeOption.budgetAnalysis} currencySymbol={estimate.currencySymbol} />
+          <BudgetSummary analysis={activeOption.budgetAnalysis} currency={displayCurrency} />
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Cost breakdown by category */}
-            <CategoryBreakdown categories={activeOption.categories} currencySymbol={estimate.currencySymbol} />
+            <CategoryBreakdown categories={activeOption.categories} currency={displayCurrency} />
             {/* Compare alternatives */}
             <AlternativesCompare
               options={estimate.options}
               activeOptionId={activeOptionId}
               onSelect={setActiveOptionId}
-              currencySymbol={estimate.currencySymbol}
+              currency={displayCurrency}
             />
           </div>
 
           {/* AI explanation, top cost drivers, recommendations */}
-          <CostExplanation option={activeOption} currencySymbol={estimate.currencySymbol} />
+          <CostExplanation option={activeOption} currency={displayCurrency} />
 
           {/* Cost breakdown by service */}
-          <ResourceCostTable option={activeOption} currencySymbol={estimate.currencySymbol} />
+          <ResourceCostTable option={activeOption} currency={displayCurrency} />
 
           {/* Disclaimer */}
           <div className="flex items-start gap-2.5 rounded-lg border border-border-subtle bg-surface-raised/40 px-4 py-3 text-[11px] text-muted-foreground">
@@ -167,7 +174,8 @@ export function PricingContainer({ projectId }: PricingContainerProps) {
             <span>{estimate.disclaimer}</span>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

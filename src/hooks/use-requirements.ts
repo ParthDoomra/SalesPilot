@@ -7,6 +7,8 @@
 
 import * as React from 'react';
 import { useRequirementStore } from '@/features/workspace/stores/requirement-store';
+import { syncProjectFromRequirement } from '@/lib/project-currency';
+import { logActivity } from '@/lib/activity-store';
 import type { RequirementFieldKey } from '@/types';
 
 export function useRequirements(projectId: string) {
@@ -34,6 +36,9 @@ export function useRequirements(projectId: string) {
       if (res.ok) {
         const data = await res.json();
         setRequirement(data.requirement);
+        if (data.requirement) {
+          syncProjectFromRequirement(projectId, data.requirement);
+        }
       }
     } catch {
       // Silent fail — requirement stays null
@@ -67,6 +72,9 @@ export function useRequirements(projectId: string) {
       if (res.ok) {
         const data = await res.json();
         setRequirement(data.requirement);
+        if (data.requirement) {
+          syncProjectFromRequirement(projectId, data.requirement);
+        }
         setEditingField(null);
       }
     } catch {
@@ -93,6 +101,21 @@ export function useRequirements(projectId: string) {
         return { ok: false, error: data.error || 'Failed to extract requirements.' };
       }
       setRequirement(data.requirement);
+      if (data.requirement) {
+        syncProjectFromRequirement(projectId, data.requirement);
+      }
+      // Record the upload + the AI extraction/analysis for the Activity timeline.
+      logActivity(projectId, {
+        type: 'requirements_uploaded',
+        title: 'Requirements uploaded',
+        detail: sourceType === 'paste' ? 'Pasted text' : sourceType,
+        source: 'user',
+      });
+      logActivity(projectId, {
+        type: 'requirement_analysis',
+        title: 'AI requirement analysis completed',
+        source: 'ai',
+      });
       return { ok: true, changedFields: data.changedFields, message: data.message };
     } catch {
       return { ok: false, error: 'Failed to extract requirements.' };

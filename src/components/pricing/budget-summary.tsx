@@ -1,69 +1,76 @@
 /**
- * BudgetSummary — compares the estimated cost against the customer's budget:
- * customer budget, estimated monthly/annual cost, difference, utilization %,
- * and a within/over-budget status. All values are estimates.
+ * BudgetSummary — compares the estimated cost against the customer's budget.
+ * Internal amounts are USD; display converts via workspace currency selector.
  */
 
 "use client";
 
-import * as React from 'react';
 import { Wallet, CalendarClock, CalendarRange, Scale, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { BudgetAnalysis } from '@/types';
-import { formatMoney } from './format';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface BudgetSummaryProps {
   analysis: BudgetAnalysis;
-  currencySymbol: string;
+  /** Customer's original currency to display in. */
+  currency?: string;
 }
 
-export function BudgetSummary({ analysis, currencySymbol }: BudgetSummaryProps) {
+export function BudgetSummary({ analysis, currency }: BudgetSummaryProps) {
+  const { formatFromUsd, format } = useCurrency();
   const {
     hasBudget,
     customerBudget,
-    customerCurrencySymbol,
+    customerCurrency,
     budgetPeriod,
-    estimatedMonthlyCost,
-    estimatedAnnualCost,
-    differenceMonthly,
+    budgetConversion,
+    estimatedMonthlyCostUSD,
+    estimatedAnnualCostUSD,
+    differenceMonthlyUSD,
     utilizationPercent,
     status,
   } = analysis;
 
+  // The customer's original currency (from the pricing conversion model).
+  const displayCurrency = customerCurrency || currency || 'USD';
   const isOver = status === 'over';
   const withinKnown = status !== 'unknown';
 
   const cards = [
     {
       label: 'Customer budget',
-      value: hasBudget && customerBudget !== null
-        ? `${customerCurrencySymbol}${customerBudget.toLocaleString()}`
-        : '—',
-      sub: hasBudget ? `per ${budgetPeriod}` : 'not provided',
+      value:
+        hasBudget && customerBudget !== null
+          ? format(customerBudget, displayCurrency)
+          : '—',
+      sub: hasBudget ? `per ${budgetPeriod} (${displayCurrency})` : 'not provided',
       icon: Wallet,
       tone: 'text-foreground',
     },
     {
       label: 'Estimated monthly cost',
-      value: formatMoney(estimatedMonthlyCost, currencySymbol),
-      sub: 'AI estimate',
+      value: formatFromUsd(estimatedMonthlyCostUSD, displayCurrency),
+      sub: `AI estimate · priced in USD, shown in ${displayCurrency}`,
       icon: CalendarClock,
       tone: 'text-foreground',
     },
     {
       label: 'Estimated annual cost',
-      value: formatMoney(estimatedAnnualCost, currencySymbol),
+      value: formatFromUsd(estimatedAnnualCostUSD, displayCurrency),
       sub: 'incl. annual commitment discount',
       icon: CalendarRange,
       tone: 'text-foreground',
     },
     {
       label: 'Budget difference',
-      value: withinKnown && differenceMonthly !== null
-        ? `${differenceMonthly >= 0 ? '+' : '−'}${formatMoney(Math.abs(differenceMonthly), currencySymbol)}`
-        : '—',
-      sub: withinKnown ? `${differenceMonthly !== null && differenceMonthly >= 0 ? 'under' : 'over'} / month` : 'no budget',
+      value:
+        withinKnown && differenceMonthlyUSD !== null
+          ? `${differenceMonthlyUSD >= 0 ? '+' : '−'}${formatFromUsd(Math.abs(differenceMonthlyUSD), displayCurrency)}`
+          : '—',
+      sub: withinKnown
+        ? `${differenceMonthlyUSD !== null && differenceMonthlyUSD >= 0 ? 'under' : 'over'} / month`
+        : 'no budget',
       icon: Scale,
       tone: withinKnown ? (isOver ? 'text-danger' : 'text-success') : 'text-foreground',
     },
@@ -71,6 +78,12 @@ export function BudgetSummary({ analysis, currencySymbol }: BudgetSummaryProps) 
 
   return (
     <div className="space-y-4">
+      {budgetConversion && (
+        <p className="text-[11px] text-muted-foreground">
+          Budget converted to USD at rate 1 USD = {budgetConversion.exchangeRate}{' '}
+          {customerCurrency} (as of {budgetConversion.exchangeRateTimestamp.slice(0, 10)}).
+        </p>
+      )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => (
           <Card key={c.label} className="p-5">
@@ -86,7 +99,6 @@ export function BudgetSummary({ analysis, currencySymbol }: BudgetSummaryProps) 
         ))}
       </div>
 
-      {/* Utilization + status */}
       {withinKnown && utilizationPercent !== null && (
         <Card className="p-5">
           <div className="flex items-center justify-between">
@@ -113,7 +125,7 @@ export function BudgetSummary({ analysis, currencySymbol }: BudgetSummaryProps) 
             </span>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Estimated monthly cost is {utilizationPercent}% of the customer&apos;s monthly budget.
+            Estimated monthly cost is {utilizationPercent}% of the customer&apos;s monthly budget (USD comparison).
           </p>
         </Card>
       )}

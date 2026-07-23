@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SEED_PROJECTS } from "./mock-data";
+import { logActivity } from "./activity-store";
 import type { Project, ProjectStatus } from "./types";
 
 interface ProjectsState {
@@ -43,6 +44,15 @@ export const useProjectsStore = create<ProjectsState>()(
         return project;
       },
       updateProject: (id, patch) => {
+        // Record project status changes so they appear on the Activity timeline.
+        const current = get().projects.find((p) => p.id === id);
+        if (patch.status && current && patch.status !== current.status) {
+          logActivity(id, {
+            type: "status_changed",
+            title: `Status changed to ${patch.status}`,
+            source: "user",
+          });
+        }
         set({
           projects: get().projects.map((p) =>
             p.id === id ? { ...p, ...patch, updatedAt: today() } : p

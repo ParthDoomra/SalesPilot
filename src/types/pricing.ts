@@ -37,9 +37,9 @@ export interface ResourceCostEstimate {
   category: PricingCategory;
   provider: CloudProvider;
   tier: string;
-  /** Estimated monthly cost in the estimate currency. */
+  /** Estimated monthly cost in USD (internal pricing currency). */
   monthlyCost: number;
-  /** Estimated yearly cost in the estimate currency. */
+  /** Estimated yearly cost in USD. */
   yearlyCost: number;
   /** 0–100 confidence in this line-item estimate. */
   confidence: number;
@@ -59,26 +59,50 @@ export interface CategoryCostGroup {
 
 export type BudgetStatus = 'within' | 'over' | 'unknown';
 
+/** Budget conversion metadata captured before pricing comparison. */
+export interface BudgetConversionMeta {
+  originalBudget: number;
+  originalCurrency: string;
+  convertedBudgetUSD: number;
+  exchangeRate: number;
+  exchangeRateTimestamp: string;
+}
+
 /** Compares an option's estimated cost against the customer's stated budget. */
 export interface BudgetAnalysis {
   /** Whether the requirement supplied a usable budget. */
   hasBudget: boolean;
-  /** Budget as stated by the customer (their currency & period). */
+  /** Budget as stated by the customer (original currency & period). */
   customerBudget: number | null;
   customerCurrency: string;
   customerCurrencySymbol: string;
   budgetPeriod: string;
-  /** Budget normalised to the estimate currency (USD), per month / year. */
-  budgetMonthly: number | null;
-  budgetAnnual: number | null;
-  estimatedMonthlyCost: number;
-  estimatedAnnualCost: number;
-  /** budgetMonthly − estimatedMonthly (positive = under budget). */
-  differenceMonthly: number | null;
-  differenceAnnual: number | null;
-  /** estimatedMonthly / budgetMonthly × 100. */
+  /** Budget conversion metadata (original → USD). */
+  budgetConversion: BudgetConversionMeta | null;
+  /** Customer budget normalised to monthly USD for comparison. */
+  budgetMonthlyUSD: number | null;
+  budgetAnnualUSD: number | null;
+  /** Estimated costs — always in USD (internal pricing currency). */
+  estimatedMonthlyCostUSD: number;
+  estimatedAnnualCostUSD: number;
+  /** budgetMonthlyUSD − estimatedMonthlyCostUSD (positive = under budget). */
+  differenceMonthlyUSD: number | null;
+  differenceAnnualUSD: number | null;
+  /** estimatedMonthlyCostUSD / budgetMonthlyUSD × 100. */
   utilizationPercent: number | null;
   status: BudgetStatus;
+  /** @deprecated Use estimatedMonthlyCostUSD — kept for migration. */
+  budgetMonthly: number | null;
+  /** @deprecated Use estimatedMonthlyCostUSD */
+  budgetAnnual: number | null;
+  /** @deprecated Use estimatedMonthlyCostUSD */
+  estimatedMonthlyCost: number;
+  /** @deprecated Use estimatedAnnualCostUSD */
+  estimatedAnnualCost: number;
+  /** @deprecated Use differenceMonthlyUSD */
+  differenceMonthly: number | null;
+  /** @deprecated Use differenceAnnualUSD */
+  differenceAnnual: number | null;
 }
 
 /** Full estimate for a single architecture option (Performance / Balanced / Budget). */
@@ -119,15 +143,35 @@ export interface OptimizationProjection {
   isRequired: boolean;
 }
 
+/**
+ * Canonical record of the customer-budget → USD conversion performed when the
+ * pricing report was generated. Persisted on the estimate so downstream modules
+ * (Dashboard, Proposal, exports) can show the original amount, the USD amount
+ * used for all calculations, and the exact rate/date that was applied — without
+ * re-running any conversion. All conversion goes through CurrencyService.
+ */
+export interface PricingBudgetConversion {
+  /** Customer budget as stated, in their original currency (not period-normalised). */
+  originalAmount: number;
+  /** ISO code of the customer's selected currency, e.g. "INR". */
+  originalCurrency: string;
+  /** The budget converted to USD (monthly) — what pricing calculations used. */
+  usdAmount: number;
+  /** Applied rate as "units of originalCurrency per 1 USD" (e.g. 96.57 for INR). */
+  exchangeRate: number;
+  /** Provider's reference date for the rate (YYYY-MM-DD), or null if unknown. */
+  exchangeRateDate: string | null;
+}
+
 /** The complete pricing estimate for a project's architecture. */
 export interface PricingEstimate {
   id: string;
   projectId: string;
   architectureId: string;
   provider: CloudProvider;
-  /** ISO currency code the numbers are expressed in (currently always USD). */
+  /** ISO currency code — always USD (internal pricing currency). */
   currency: string;
-  /** Currency symbol for display. */
+  /** Currency symbol for USD. Display layers convert for the user. */
   currencySymbol: string;
   /** Estimate for every architecture alternative, for comparison. */
   options: OptionCostEstimate[];
@@ -137,5 +181,11 @@ export interface PricingEstimate {
   catalogVersion: string;
   /** Human-readable disclaimer shown in the UI. */
   disclaimer: string;
+  /**
+   * Customer-budget → USD conversion applied for this report (via
+   * CurrencyService). Null when the requirement supplied no usable budget, so
+   * no conversion was needed.
+   */
+  currencyConversion: PricingBudgetConversion | null;
   generatedAt: string;
 }

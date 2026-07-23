@@ -74,11 +74,25 @@ function serviceCard(svc: CloudServiceNode): ProposalServiceCard {
 // Section builders
 // ---------------------------------------------------------------------------
 
-function buildRequirements(req: RequirementModel | null, currencySymbol: string): ProposalRequirementItem[] {
+import { currencyService } from '@/services/currency';
+
+function buildRequirements(req: RequirementModel | null): ProposalRequirementItem[] {
   const compliance = fieldValue<string[]>(req, 'compliance');
   const budget = fieldValue<number>(req, 'budget');
   const currency = str(fieldValue<string>(req, 'budgetCurrency')) || 'USD';
   const period = str(fieldValue<string>(req, 'budgetPeriod')) || 'monthly';
+
+  // The budget is captured in the customer's original currency, so format it
+  // in that currency (no conversion). CurrencyService is the single formatter.
+  const budgetLabel = budget
+    ? (() => {
+        try {
+          return `${currencyService.formatCurrency(Number(budget), currency)} / ${period}`;
+        } catch {
+          return `${Math.round(Number(budget)).toLocaleString('en-US')} ${currency} / ${period}`;
+        }
+      })()
+    : '—';
 
   const items: ProposalRequirementItem[] = [
     { label: 'Company', value: orDash(str(fieldValue(req, 'company'))) },
@@ -88,7 +102,7 @@ function buildRequirements(req: RequirementModel | null, currencySymbol: string)
     { label: 'Region', value: orDash(str(fieldValue(req, 'region'))) },
     {
       label: 'Budget',
-      value: budget ? `${currencySymbol}${Number(budget).toLocaleString()} / ${period}` : '—',
+      value: budgetLabel,
     },
     { label: 'Currency', value: currency },
     {
@@ -219,7 +233,7 @@ export function buildProposal({ architecture, requirement, estimate, customerNam
       architectureName: option.name,
     },
 
-    requirements: buildRequirements(requirement, estimate.currencySymbol),
+    requirements: buildRequirements(requirement),
 
     architecture: {
       name: option.name,

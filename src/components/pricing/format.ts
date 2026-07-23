@@ -1,7 +1,23 @@
-/** Shared money formatting for the pricing view. */
+/** Shared money formatting — converts USD internal amounts for display. */
 
-export function formatMoney(amount: number, symbol = '$'): string {
-  return `${symbol}${Math.round(amount).toLocaleString()}`;
+import { formatUsdForDisplay } from '@/services/currency';
+
+/** Format a USD amount in the selected display currency. */
+export function formatMoneyUsd(
+  amountUsd: number,
+  displayCurrency: string,
+  rates?: Record<string, number>,
+): string {
+  return formatUsdForDisplay(amountUsd, displayCurrency, rates);
+}
+
+/** Compatibility helper for legacy pricing UI imports. */
+export function formatMoney(
+  amountUsd: number,
+  displayCurrency: string,
+  rates?: Record<string, number>,
+): string {
+  return formatMoneyUsd(amountUsd, displayCurrency, rates);
 }
 
 /** Colour class for a confidence score, matching the app's semantic tokens. */

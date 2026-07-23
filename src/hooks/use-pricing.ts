@@ -10,7 +10,9 @@
 
 import * as React from 'react';
 import { useProjectArchitectureStore } from '@/lib/project-architecture-store';
-import { useProjectsStore } from '@/lib/projects-store';
+import { useProjectPricingStore } from '@/lib/project-pricing-store';
+import { useRequirementStore } from '@/features/workspace/stores/requirement-store';
+import { syncProjectFromPricingEstimate } from '@/lib/project-currency';
 import type { PricingEstimate, OptionCostEstimate } from '@/types';
 
 interface UsePricingResult {
@@ -41,7 +43,18 @@ export function usePricing(projectId: string): UsePricingResult {
   // the same state the Architecture page writes to. No manual selection needed.
   const architecture = useProjectArchitectureStore((s) => s.byProject[projectId] ?? null);
   const persistSelectedOption = useProjectArchitectureStore((s) => s.setSelectedOptionId);
-  const updateProject = useProjectsStore((s) => s.updateProject);
+  const savedEstimate = useProjectPricingStore((s) => s.byProject[projectId] ?? null);
+  const persistPricing = useProjectPricingStore((s) => s.setPricing);
+
+  // Rehydrate the last generated report from durable storage so currency and
+  // amounts survive reloads without forcing a regeneration.
+  React.useEffect(() => {
+    if (!savedEstimate || estimate) return;
+    setEstimate(savedEstimate);
+    setActiveOptionIdState(savedEstimate.selectedOptionId);
+    setHasGenerated(true);
+    syncProjectFromPricingEstimate(projectId, savedEstimate);
+  }, [projectId, savedEstimate, estimate]);
 
   const generate = React.useCallback(async () => {
     if (!projectId) return;
@@ -60,12 +73,29 @@ export function usePricing(projectId: string): UsePricingResult {
     setError(null);
     setReason(null);
     try {
+      let scopedRequirement =
+        useRequirementStore.getState().requirement?.projectId === projectId
+          ? useRequirementStore.getState().requirement ?? undefined
+          : undefined;
+
+      if (!scopedRequirement) {
+        try {
+          const reqRes = await fetch(`/api/projects/${projectId}/requirements`);
+          if (reqRes.ok) {
+            const reqData = await reqRes.json();
+            scopedRequirement = reqData.requirement ?? undefined;
+          }
+        } catch {
+          // Non-fatal — server may still have the requirement in its store.
+        }
+      }
+
       // Combine the selected Architecture JSON (from client state) with the
       // Phase 2 Requirement JSON (read on the server) to build the report.
       const res = await fetch('/api/pricing/estimate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ architecture }),
+        body: JSON.stringify({ architecture, requirement: scopedRequirement }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -74,6 +104,12 @@ export function usePricing(projectId: string): UsePricingResult {
       const data = await res.json();
       const next: PricingEstimate | null = data.estimate ?? null;
       setEstimate(next);
+      if (next) {
+        persistPricing(projectId, next);
+        syncProjectFromPricingEstimate(projectId, next);
+      } else {
+        persistPricing(projectId, null);
+      }
       setReason(next ? null : data.reason ?? null);
       setActiveOptionIdState(next ? next.selectedOptionId : null);
     } catch (err) {
@@ -83,7 +119,7 @@ export function usePricing(projectId: string): UsePricingResult {
       setHasGenerated(true);
       setIsLoading(false);
     }
-  }, [projectId, architecture]);
+  }, [projectId, architecture, persistPricing]);
 
   const activeOption =
     (estimate?.options.find((o) => o.optionId === activeOptionId) ?? estimate?.options[0]) || null;
@@ -99,20 +135,15 @@ export function usePricing(projectId: string): UsePricingResult {
   );
 
   // Keep the project header's "Monthly estimate" in sync with the active option,
-  // in the report's currency (req 7). Runs whenever the active figure changes.
+  // in the report's currency. Runs whenever the active figure changes.
   const activeMonthly = activeOption?.monthlyCost ?? null;
-  const activeSymbol = estimate?.currencySymbol ?? null;
   React.useEffect(() => {
-    if (activeMonthly === null || activeSymbol === null) return;
-    const rounded = Math.round(activeMonthly);
-    // Only write when the value actually changed, so viewing Pricing doesn't
-    // needlessly bump the project's "Last updated" timestamp.
-    const current = useProjectsStore.getState().projects.find((p) => p.id === projectId);
-    if (current && current.monthlyEstimate === rounded && current.estimateCurrencySymbol === activeSymbol) {
-      return;
-    }
-    updateProject(projectId, { monthlyEstimate: rounded, estimateCurrencySymbol: activeSymbol });
-  }, [projectId, activeMonthly, activeSymbol, updateProject]);
+    if (!estimate || activeMonthly === null) return;
+    syncProjectFromPricingEstimate(projectId, {
+      ...estimate,
+      selectedOptionId: activeOptionId ?? estimate.selectedOptionId,
+    });
+  }, [projectId, estimate, activeOptionId, activeMonthly]);
 
   return {
     estimate,

@@ -10,7 +10,7 @@
 "use client";
 
 import * as React from 'react';
-import { CheckCircle2, Circle, Building2, Target, Factory, Cloud, Layers } from 'lucide-react';
+import { CheckCircle2, Circle, Building2, Target, Factory, Cloud, Layers, Coins, ArrowLeftRight, CalendarDays, Calculator } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArchitectureCanvas } from '@/components/architecture/architecture-canvas';
@@ -35,7 +35,13 @@ function SectionHeading({ index, title }: { index: number; title: string }) {
 }
 
 export function ProposalDocument({ proposal }: ProposalDocumentProps) {
-  const { executiveSummary: ex, selectedOption, currencySymbol } = proposal;
+  const { executiveSummary: ex, selectedOption } = proposal;
+
+  // Display all pricing in the customer's original currency; USD stays the
+  // internal calculation currency. Source of truth is the pricing conversion.
+  const conversion = proposal.estimate?.currencyConversion ?? null;
+  const displayCurrency =
+    conversion?.originalCurrency ?? selectedOption.budgetAnalysis.customerCurrency ?? proposal.currency;
 
   return (
     <div className="space-y-8">
@@ -115,9 +121,25 @@ export function ProposalDocument({ proposal }: ProposalDocumentProps) {
       {/* 5. Pricing Summary */}
       <section className="space-y-3">
         <SectionHeading index={5} title="Pricing Summary" />
-        <BudgetSummary analysis={selectedOption.budgetAnalysis} currencySymbol={currencySymbol} />
-        <CategoryBreakdown categories={selectedOption.categories} currencySymbol={currencySymbol} />
-        <CostExplanation option={selectedOption} currencySymbol={currencySymbol} />
+        <Card className="p-5">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <SummaryItem icon={Coins} label="Original currency" value={displayCurrency} />
+            <SummaryItem
+              icon={ArrowLeftRight}
+              label="Exchange rate"
+              value={conversion ? `1 USD = ${conversion.exchangeRate} ${conversion.originalCurrency}` : '—'}
+            />
+            <SummaryItem
+              icon={CalendarDays}
+              label="Exchange rate date"
+              value={conversion?.exchangeRateDate ?? '—'}
+            />
+            <SummaryItem icon={Calculator} label="Internal calculation currency" value="USD" />
+          </div>
+        </Card>
+        <BudgetSummary analysis={selectedOption.budgetAnalysis} currency={displayCurrency} />
+        <CategoryBreakdown categories={selectedOption.categories} currency={displayCurrency} />
+        <CostExplanation option={selectedOption} currency={displayCurrency} />
       </section>
 
       {/* 6. Why This Architecture */}

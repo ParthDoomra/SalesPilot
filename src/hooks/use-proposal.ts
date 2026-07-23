@@ -4,14 +4,17 @@
  *
  * Mirrors usePricing: the architecture comes from the durable, persisted project
  * state (no manual selection), and the report is generated on the server by
- * combining all three phase outputs.
+ * combining all three phase outputs. Every successful generation is persisted as
+ * a new version in the project proposal store, which powers the Proposal Center
+ * and its version history.
  */
 
 "use client";
 
 import * as React from 'react';
 import { useProjectArchitectureStore } from '@/lib/project-architecture-store';
-import { useProjectsStore } from '@/lib/projects-store';
+import { useProjectProposalStore } from '@/lib/project-proposal-store';
+import { generateProposalForProject } from '@/lib/proposal-generation';
 import type { ProposalModel } from '@/types';
 
 interface UseProposalResult {
@@ -25,52 +28,39 @@ interface UseProposalResult {
 }
 
 export function useProposal(projectId: string): UseProposalResult {
-  const [proposal, setProposal] = React.useState<ProposalModel | null>(null);
+  // Rehydrate the latest saved proposal so revisiting the tab neither loses the
+  // proposal nor auto-generates a spurious new version.
+  const [proposal, setProposal] = React.useState<ProposalModel | null>(
+    () => useProjectProposalStore.getState().getLatest(projectId)?.proposal ?? null,
+  );
+  const [hasGenerated, setHasGenerated] = React.useState<boolean>(
+    () => !!useProjectProposalStore.getState().getLatest(projectId),
+  );
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [hasGenerated, setHasGenerated] = React.useState(false);
   const [reason, setReason] = React.useState<string | null>(null);
 
   const architecture = useProjectArchitectureStore((s) => s.byProject[projectId] ?? null);
-  const project = useProjectsStore((s) => s.projects.find((p) => p.id === projectId) ?? null);
-  const customerName = project?.customer;
+  const addVersion = useProjectProposalStore((s) => s.addVersion);
 
   const generate = React.useCallback(async () => {
     if (!projectId) return;
-
-    if (!architecture) {
-      setProposal(null);
-      setReason('no-architecture');
-      setHasGenerated(true);
-      setIsLoading(false);
-      return;
-    }
 
     setIsLoading(true);
     setError(null);
     setReason(null);
     try {
-      const res = await fetch('/api/proposal/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ architecture, customerName }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to generate the proposal.');
-      }
-      const data = await res.json();
-      const next: ProposalModel | null = data.proposal ?? null;
-      setProposal(next);
-      setReason(next ? null : data.reason ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate the proposal.');
-      setProposal(null);
+      const result = await generateProposalForProject(projectId);
+      setProposal(result.proposal);
+      setReason(result.reason);
+      if (result.error) setError(result.error);
+      // Persist each successful generation as the next version.
+      if (result.proposal) addVersion(projectId, result.proposal);
     } finally {
       setHasGenerated(true);
       setIsLoading(false);
     }
-  }, [projectId, architecture, customerName]);
+  }, [projectId, addVersion]);
 
   return {
     proposal,

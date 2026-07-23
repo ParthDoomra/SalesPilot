@@ -1,35 +1,45 @@
-import { FolderKanban, DollarSign, Users, Sparkles } from "lucide-react";
+"use client";
+
+import { FolderKanban, DollarSign, Sparkles, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { SEED_PROJECTS } from "@/lib/mock-data";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useCurrency } from "@/hooks/use-currency";
 
 export function StatCards() {
-  const active = SEED_PROJECTS.filter((p) => !p.archived && p.status !== "Won" && p.status !== "Lost");
-  const monthlyTotal = active.reduce((sum, p) => sum + p.monthlyEstimate, 0);
+  const {
+    activeProjectCount,
+    totalMonthlyCost,
+    costCurrency,
+    totalAIGenerations,
+    proposalCount,
+    pricingReportCount,
+  } = useDashboardData();
+  const { format } = useCurrency();
 
   const stats = [
     {
       label: "Active projects",
-      value: active.length.toString(),
-      sub: `${SEED_PROJECTS.filter((p) => p.status === "Won").length} won this quarter`,
+      value: activeProjectCount.toString(),
+      sub: "in progress across your pipeline",
       icon: FolderKanban,
     },
     {
-      label: "Estimated monthly cost",
-      value: `$${monthlyTotal.toLocaleString()}`,
-      sub: "across active pipeline",
+      label: "Estimated Monthly Cloud Spend (USD)",
+      value: format(totalMonthlyCost, costCurrency),
+      sub: "sum of selected architectures",
       icon: DollarSign,
     },
     {
-      label: "Team members",
-      value: "6",
-      sub: "2 Sales Engineers, 1 Admin",
-      icon: Users,
+      label: "AI generations",
+      value: totalAIGenerations.toString(),
+      sub: `${pricingReportCount} pricing report${pricingReportCount === 1 ? "" : "s"} generated`,
+      icon: Sparkles,
     },
     {
-      label: "AI activity",
-      value: "142",
-      sub: "requirement queries this week",
-      icon: Sparkles,
+      label: "Proposals",
+      value: proposalCount.toString(),
+      sub: "started or sent",
+      icon: FileText,
     },
   ];
 

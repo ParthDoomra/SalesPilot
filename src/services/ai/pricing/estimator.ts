@@ -27,7 +27,9 @@ import type {
   ResourceCostEstimate,
   PricingCategory,
   BudgetAnalysis,
+  BudgetConversionMeta,
   BudgetStatus,
+  PricingBudgetConversion,
 } from '@/types';
 import { PRICING_CATEGORIES } from '@/types';
 import {
@@ -39,9 +41,8 @@ import {
   TIER_KEYWORD_MULTIPLIERS,
   OPTION_TYPE_MULTIPLIER,
   SERVICE_CATEGORY_TO_PRICING,
-  EXCHANGE_RATES,
-  CURRENCY_SYMBOLS,
 } from './catalog';
+import { getCurrencySymbol, currencyService, RateUnavailableError } from '@/services/currency';
 import { createLogger } from '@/utils/logger';
 
 const logger = createLogger('CostEstimator');
@@ -57,21 +58,6 @@ export interface PricingEstimator {
 // ---------------------------------------------------------------------------
 
 const round = (n: number) => Math.round(n);
-/** Used only to normalise INR-denominated architecture anchor ranges back to the USD base. */
-const INR_PER_USD = EXCHANGE_RATES.INR;
-
-const currencySymbol = (code?: string) => (code ? CURRENCY_SYMBOLS[code.toUpperCase()] ?? `${code} ` : '$');
-
-/**
- * Resolves the report currency from the requirement (Phase 2). Everything in the
- * report is presented in this single currency — costs, budget, and charts — so
- * currencies are never mixed. Unknown codes fall back to USD.
- */
-function resolveCurrency(req: RequirementModel | null | undefined): { code: string; symbol: string; rate: number } {
-  const raw = String(fieldValue<string>(req, 'budgetCurrency') ?? ESTIMATE_CURRENCY).toUpperCase();
-  const code = raw in EXCHANGE_RATES ? raw : ESTIMATE_CURRENCY;
-  return { code, symbol: currencySymbol(code), rate: EXCHANGE_RATES[code] };
-}
 
 /** Safely read a requirement field's effective value. */
 function fieldValue<T = unknown>(req: RequirementModel | null | undefined, key: keyof RequirementModel): T | null {
@@ -80,13 +66,43 @@ function fieldValue<T = unknown>(req: RequirementModel | null | undefined, key: 
   return (f && typeof f === 'object' && 'value' in f ? (f.value ?? null) : null) as T | null;
 }
 
+/** Detect the currency of an architecture anchor range from its symbol/code. */
+function detectAnchorCurrency(range: string): 'INR' | 'EUR' | 'GBP' | 'JPY' | null {
+  if (/₹|inr|rs\.?/i.test(range)) return 'INR';
+  if (/€|eur/i.test(range)) return 'EUR';
+  if (/£|gbp/i.test(range)) return 'GBP';
+  if (/¥|jpy/i.test(range)) return 'JPY';
+  return null;
+}
+
+/**
+ * Parse an architecture anchor cost band into a USD midpoint. Parsing is local
+ * string work; any currency conversion goes through CurrencyService (using the
+ * pre-warmed 24h cache). Anchor bands are almost always USD; if a foreign band
+ * appears and no rate is cached, we fall back to the raw figure so the estimate
+ * still succeeds (the customer budget path, below, is the strict one).
+ */
 export function parseAnchorRangeUsd(range?: string): number | null {
   if (!range) return null;
-  const isInr = /₹|inr|rs\.?/i.test(range);
-  const numbers = (range.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).map((n) => parseFloat(n.replace(/,/g, '')));
+
+  const numbers = (range.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).map((n) =>
+    parseFloat(n.replace(/,/g, '')),
+  );
   if (numbers.length === 0) return null;
+
   const mid = numbers.reduce((a, b) => a + b, 0) / numbers.length;
-  const usd = isInr ? mid / INR_PER_USD : mid;
+  const foreign = detectAnchorCurrency(range);
+
+  let usd = mid;
+  if (foreign) {
+    try {
+      usd = currencyService.convertToUSDSync(mid, foreign);
+    } catch (err) {
+      if (!(err instanceof RateUnavailableError)) throw err;
+      usd = mid; // best-effort: treat as USD when no rate is cached.
+    }
+  }
+
   return Number.isFinite(usd) && usd > 0 ? usd : null;
 }
 
@@ -195,14 +211,11 @@ function estimateResource(
   node: CloudServiceNode,
   optionType: ArchitectureOption['type'],
   signals: RequirementSignals,
-  /** USD → target-currency conversion rate. Every returned figure is in target currency. */
-  rate: number,
 ): ResourceCostEstimate {
   const category = SERVICE_CATEGORY_TO_PRICING[node.category] ?? 'Compute';
   const catalog = catalogMonthly(node, category, optionType);
   const anchor = parseAnchorRangeUsd(node.estimatedMonthlyCostRange);
 
-  // Requirement-driven adjustment: region × scale × category-specific overhead.
   const reqFactor = signals.regionMult * signals.scaleMult * categoryUplift(category, signals);
 
   let blendedUsd: number;
@@ -219,8 +232,7 @@ function estimateResource(
     basis = 'Catalog estimate (category, tier, provider) adjusted for requirement';
   }
 
-  // Convert into the customer's currency as the final step.
-  const monthlyCost = round(blendedUsd * reqFactor * rate);
+  const monthlyCost = round(blendedUsd * reqFactor);
   return {
     id: `cost_${node.id}`,
     serviceId: node.id,
@@ -259,8 +271,8 @@ interface BaseOptionEstimate {
   categories: CategoryCostGroup[];
 }
 
-function estimateOptionBase(option: ArchitectureOption, signals: RequirementSignals, rate: number): BaseOptionEstimate {
-  const resources = option.services.map((svc) => estimateResource(svc, option.type, signals, rate));
+function estimateOptionBase(option: ArchitectureOption, signals: RequirementSignals): BaseOptionEstimate {
+  const resources = option.services.map((svc) => estimateResource(svc, option.type, signals));
   const monthlyCost = resources.reduce((sum, r) => sum + r.monthlyCost, 0);
   const yearlyCost = resources.reduce((sum, r) => sum + r.yearlyCost, 0);
   const weight = monthlyCost;
@@ -277,57 +289,126 @@ function estimateOptionBase(option: ArchitectureOption, signals: RequirementSign
 // Budget analysis
 // ---------------------------------------------------------------------------
 
+/** The customer's budget, read from the requirement and converted to USD once. */
+interface ResolvedBudget {
+  /** Stated budget in the original currency (not period-normalised). */
+  amount: number;
+  period: string;
+  /** Normalised ISO currency code. */
+  currency: string;
+  symbol: string;
+  /** Budget normalised to monthly USD, used for all budget comparisons. */
+  budgetMonthlyUSD: number;
+  /** The conversion record persisted on the pricing report. */
+  conversion: PricingBudgetConversion;
+}
+
 /**
- * Compares the estimated cost against the customer's budget. Both sides are in
- * the SAME (customer) currency: the estimated monthly/yearly costs passed in are
- * already converted to the customer's currency, and the budget is stated in that
- * currency in the requirement — so no cross-currency comparison ever happens.
+ * Reads the customer's selected currency + budget from the requirement and
+ * converts the budget to USD via CurrencyService (24h-cached rates). Returns
+ * null when no usable budget was supplied, so no conversion is attempted.
+ *
+ * @throws {RateUnavailableError} when a conversion is required but the API is
+ *   unavailable and no cached rate exists — the API route turns this into a
+ *   meaningful error response instead of crashing.
  */
-function analyzeBudget(
-  monthlyCost: number,
-  yearlyCost: number,
-  req: RequirementModel | null | undefined,
-  currency: { code: string; symbol: string },
-): BudgetAnalysis {
+function resolveBudget(req: RequirementModel | null | undefined): ResolvedBudget | null {
   const amount = Number(fieldValue<number>(req, 'budget') ?? 0) || 0;
   const period = String(fieldValue<string>(req, 'budgetPeriod') ?? 'monthly').toLowerCase();
+  const currency = String(fieldValue<string>(req, 'budgetCurrency') ?? ESTIMATE_CURRENCY).toUpperCase();
+  if (amount <= 0) return null;
 
-  const base: BudgetAnalysis = {
-    hasBudget: false,
-    customerBudget: null,
-    customerCurrency: currency.code,
-    customerCurrencySymbol: currency.symbol,
-    budgetPeriod: period,
-    budgetMonthly: null,
-    budgetAnnual: null,
-    estimatedMonthlyCost: monthlyCost,
-    estimatedAnnualCost: yearlyCost,
-    differenceMonthly: null,
-    differenceAnnual: null,
-    utilizationPercent: null,
-    status: 'unknown' as BudgetStatus,
-  };
-
-  if (amount <= 0) return base;
-
-  // Normalise the stated budget to a monthly figure in the customer's currency.
-  // "one-time" is treated as an annual figure.
-  const budgetMonthly = period === 'yearly' || period === 'one-time' ? amount / 12 : amount;
-  const budgetAnnual = budgetMonthly * 12;
-
-  const differenceMonthly = round(budgetMonthly - monthlyCost);
-  const utilizationPercent = budgetMonthly > 0 ? Math.round((monthlyCost / budgetMonthly) * 100) : null;
+  // Currency conversion goes exclusively through CurrencyService; the
+  // yearly/one-time -> monthly normalisation is a pricing concern done on USD.
+  const { usdAmount, exchangeRate, exchangeRateDate } =
+    currencyService.convertBudgetToUSDSync(amount, currency);
+  const budgetMonthlyUSD =
+    period === 'yearly' || period === 'one-time' ? usdAmount / 12 : usdAmount;
 
   return {
-    ...base,
+    amount,
+    period,
+    currency,
+    symbol: getCurrencySymbol(currency),
+    budgetMonthlyUSD,
+    conversion: { originalAmount: amount, originalCurrency: currency, usdAmount, exchangeRate, exchangeRateDate },
+  };
+}
+
+/**
+ * Compares the estimated cost (already in USD) against the customer's budget.
+ * The budget has already been converted to USD by {@link resolveBudget}; this
+ * function performs no currency conversion of its own.
+ */
+function analyzeBudget(
+  monthlyCostUsd: number,
+  yearlyCostUsd: number,
+  req: RequirementModel | null | undefined,
+  resolved: ResolvedBudget | null,
+): BudgetAnalysis {
+  const period =
+    resolved?.period ?? String(fieldValue<string>(req, 'budgetPeriod') ?? 'monthly').toLowerCase();
+  const customerCurrency =
+    resolved?.currency ??
+    String(fieldValue<string>(req, 'budgetCurrency') ?? ESTIMATE_CURRENCY).toUpperCase();
+  const customerSymbol = resolved?.symbol ?? getCurrencySymbol(customerCurrency);
+
+  const empty: BudgetAnalysis = {
+    hasBudget: false,
+    customerBudget: null,
+    customerCurrency,
+    customerCurrencySymbol: customerSymbol,
+    budgetPeriod: period,
+    budgetConversion: null,
+    budgetMonthlyUSD: null,
+    budgetAnnualUSD: null,
+    estimatedMonthlyCostUSD: monthlyCostUsd,
+    estimatedAnnualCostUSD: yearlyCostUsd,
+    differenceMonthlyUSD: null,
+    differenceAnnualUSD: null,
+    utilizationPercent: null,
+    status: 'unknown',
+    budgetMonthly: null,
+    budgetAnnual: null,
+    estimatedMonthlyCost: monthlyCostUsd,
+    estimatedAnnualCost: yearlyCostUsd,
+    differenceMonthly: null,
+    differenceAnnual: null,
+  };
+
+  if (!resolved) return empty;
+
+  const budgetMonthlyUSD = round(resolved.budgetMonthlyUSD);
+  const budgetAnnualUSD = round(budgetMonthlyUSD * 12);
+  const differenceMonthlyUSD = round(budgetMonthlyUSD - monthlyCostUsd);
+  const utilizationPercent =
+    budgetMonthlyUSD > 0 ? Math.round((monthlyCostUsd / budgetMonthlyUSD) * 100) : null;
+
+  const conversionMeta: BudgetConversionMeta = {
+    originalBudget: resolved.amount,
+    originalCurrency: resolved.currency,
+    convertedBudgetUSD: budgetMonthlyUSD,
+    exchangeRate: resolved.conversion.exchangeRate,
+    exchangeRateTimestamp: resolved.conversion.exchangeRateDate ?? new Date().toISOString(),
+  };
+
+  return {
+    ...empty,
     hasBudget: true,
-    customerBudget: amount,
-    budgetMonthly: round(budgetMonthly),
-    budgetAnnual: round(budgetAnnual),
-    differenceMonthly,
-    differenceAnnual: round(budgetAnnual - yearlyCost),
+    customerBudget: resolved.amount,
+    budgetConversion: conversionMeta,
+    budgetMonthlyUSD,
+    budgetAnnualUSD,
+    differenceMonthlyUSD,
+    differenceAnnualUSD: round(budgetAnnualUSD - yearlyCostUsd),
     utilizationPercent,
-    status: monthlyCost <= budgetMonthly ? 'within' : 'over',
+    status: monthlyCostUsd <= budgetMonthlyUSD ? 'within' : 'over',
+    budgetMonthly: budgetMonthlyUSD,
+    budgetAnnual: budgetAnnualUSD,
+    estimatedMonthlyCost: monthlyCostUsd,
+    estimatedAnnualCost: yearlyCostUsd,
+    differenceMonthly: differenceMonthlyUSD,
+    differenceAnnual: round(budgetAnnualUSD - yearlyCostUsd),
   };
 }
 
@@ -335,9 +416,11 @@ function analyzeBudget(
 // AI explanation + recommendations
 // ---------------------------------------------------------------------------
 
-/** Money formatter bound to the report's currency symbol. */
+import { formatCurrency as fmtCurrency } from '@/services/currency';
+
+/** Money formatter for USD amounts shown in explanations (display layer converts). */
 type MoneyFmt = (n: number) => string;
-const makeFmt = (symbol: string): MoneyFmt => (n: number) => `${symbol}${round(n).toLocaleString()}`;
+const makeFmt = (): MoneyFmt => (n: number) => fmtCurrency(n, ESTIMATE_CURRENCY);
 
 function buildExplanation(
   base: BaseOptionEstimate,
@@ -358,15 +441,15 @@ function buildExplanation(
     `The estimate is driven up by ${signals.usersText}, ${signals.regionText}, ${signals.availabilityText}, ${signals.complianceText}${signals.drPresent ? ', and disaster-recovery provisioning' : ''}.`,
   );
 
-  if (analysis.hasBudget && analysis.budgetMonthly !== null) {
-    const budgetText = `${analysis.customerCurrencySymbol}${analysis.customerBudget?.toLocaleString()} / ${analysis.budgetPeriod}`;
+  if (analysis.hasBudget && analysis.budgetMonthlyUSD !== null) {
+    const budgetText = `${fmtCurrency(analysis.customerBudget ?? 0, analysis.customerCurrencySymbol)} / ${analysis.budgetPeriod}`;
     if (analysis.status === 'within') {
       parts.push(
         `This fits within the customer's budget of ${budgetText}, using about ${analysis.utilizationPercent}% of the available monthly spend.`,
       );
     } else {
       parts.push(
-        `This exceeds the customer's budget of ${budgetText} by ${fmt(Math.abs(analysis.differenceMonthly ?? 0))}/month (${analysis.utilizationPercent}% utilization) — see recommendations below.`,
+        `This exceeds the customer's budget of ${budgetText} by ${fmt(Math.abs(analysis.differenceMonthlyUSD ?? 0))}/month (${analysis.utilizationPercent}% utilization) — see recommendations below.`,
       );
     }
   } else {
@@ -388,12 +471,12 @@ function buildRecommendations(
   fmt: MoneyFmt,
 ): string[] {
   const recs: string[] = [];
-  const overBudget = analysis.hasBudget && analysis.status === 'over' && analysis.budgetMonthly !== null;
+  const overBudget = analysis.hasBudget && analysis.status === 'over' && analysis.budgetMonthlyUSD !== null;
 
   // Suggest the cheapest alternative that fits the budget (only when over budget).
   if (overBudget) {
     const cheaperFit = allBases
-      .filter((b) => b.option.id !== base.option.id && b.monthlyCost <= (analysis.budgetMonthly as number))
+      .filter((b) => b.option.id !== base.option.id && b.monthlyCost <= (analysis.budgetMonthlyUSD as number))
       .sort((a, b) => b.monthlyCost - a.monthlyCost)[0];
     if (cheaperFit) {
       recs.push(
@@ -441,8 +524,8 @@ function buildOptimization(
   const newMonthlyCost = round(base.monthlyCost * (1 - pct));
   const newYearlyCost = round(newMonthlyCost * 12 * (1 - ANNUAL_DISCOUNT_RATE));
   const newStatus: BudgetStatus =
-    analysis.hasBudget && analysis.budgetMonthly !== null
-      ? newMonthlyCost <= analysis.budgetMonthly
+    analysis.hasBudget && analysis.budgetMonthlyUSD !== null
+      ? newMonthlyCost <= analysis.budgetMonthlyUSD
         ? 'within'
         : 'over'
       : 'unknown';
@@ -464,14 +547,14 @@ export const catalogEstimator: PricingEstimator = {
   name: CATALOG_VERSION,
   estimate(architecture: ArchitectureModel, requirement?: RequirementModel | null): PricingEstimate {
     const signals = deriveSignals(requirement);
-    // Single report currency, taken from the requirement. All figures below are
-    // produced directly in this currency so nothing ever mixes currencies.
-    const currency = resolveCurrency(requirement);
-    const fmt = makeFmt(currency.symbol);
-    const bases = architecture.options.map((o) => estimateOptionBase(o, signals, currency.rate));
+    const fmt = makeFmt();
+    // Read the customer's selected currency and convert their budget to USD once
+    // (via CurrencyService). All pricing calculations below are in USD.
+    const resolvedBudget = resolveBudget(requirement);
+    const bases = architecture.options.map((o) => estimateOptionBase(o, signals));
 
     const options: OptionCostEstimate[] = bases.map((base) => {
-      const budgetAnalysis = analyzeBudget(base.monthlyCost, base.yearlyCost, requirement, currency);
+      const budgetAnalysis = analyzeBudget(base.monthlyCost, base.yearlyCost, requirement, resolvedBudget);
       const explanation = buildExplanation(base, budgetAnalysis, signals, architecture.selectedProvider, fmt);
       const recommendations = buildRecommendations(base, budgetAnalysis, signals, bases, fmt);
       const optimization = buildOptimization(base, budgetAnalysis, signals);
@@ -494,7 +577,7 @@ export const catalogEstimator: PricingEstimator = {
     logger.info('Pricing estimated', {
       projectId: architecture.projectId,
       provider: architecture.selectedProvider,
-      currency: currency.code,
+      currency: ESTIMATE_CURRENCY,
       options: options.length,
       hasRequirement: !!requirement,
       hasBudget: options[0]?.budgetAnalysis.hasBudget,
@@ -505,8 +588,8 @@ export const catalogEstimator: PricingEstimator = {
       projectId: architecture.projectId,
       architectureId: architecture.id,
       provider: architecture.selectedProvider,
-      currency: currency.code,
-      currencySymbol: currency.symbol,
+      currency: ESTIMATE_CURRENCY,
+      currencySymbol: getCurrencySymbol(ESTIMATE_CURRENCY),
       options,
       selectedOptionId: architecture.selectedOptionId,
       catalogVersion: CATALOG_VERSION,
@@ -514,6 +597,7 @@ export const catalogEstimator: PricingEstimator = {
         'All figures are AI-generated estimates derived from an offline pricing catalog, the ' +
         'generated architecture, and the customer requirement — not live Azure/AWS/GCP pricing. ' +
         'Actual invoiced costs will vary with region, usage, discounts, and commitments.',
+      currencyConversion: resolvedBudget?.conversion ?? null,
       generatedAt: new Date().toISOString(),
     };
   },

@@ -1,22 +1,20 @@
-/**
- * ResourceCostTable — per-resource estimated cost breakdown with a confidence
- * score on every line. All monetary columns are explicitly labelled estimates.
- */
-
 "use client";
 
-import * as React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { OptionCostEstimate } from '@/types';
-import { formatMoney, confidenceTone } from './format';
+import { confidenceTone } from './format';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface ResourceCostTableProps {
   option: OptionCostEstimate;
-  currencySymbol: string;
+  /** Customer's original currency to display in. */
+  currency?: string;
 }
 
-export function ResourceCostTable({ option, currencySymbol }: ResourceCostTableProps) {
+export function ResourceCostTable({ option, currency = 'USD' }: ResourceCostTableProps) {
+  const { formatFromUsd } = useCurrency();
+  const formatUsd = (n: number) => formatFromUsd(n, currency);
   const rows = [...option.resources].sort((a, b) => b.monthlyCost - a.monthlyCost);
 
   return (
@@ -53,10 +51,10 @@ export function ResourceCostTable({ option, currencySymbol }: ResourceCostTableP
                     <Badge variant="neutral">{r.category}</Badge>
                   </td>
                   <td className="py-3 pr-3 text-right font-mono-data font-semibold text-foreground">
-                    {formatMoney(r.monthlyCost, currencySymbol)}
+                    {formatUsd(r.monthlyCost)}
                   </td>
                   <td className="py-3 pr-3 text-right font-mono-data text-muted-foreground">
-                    {formatMoney(r.yearlyCost, currencySymbol)}
+                    {formatUsd(r.yearlyCost)}
                   </td>
                   <td className={`py-3 text-right font-mono-data font-medium ${confidenceTone(r.confidence)}`}>
                     {r.confidence}%
@@ -70,10 +68,10 @@ export function ResourceCostTable({ option, currencySymbol }: ResourceCostTableP
                   Total estimated cost
                 </td>
                 <td className="py-3 pr-3 text-right font-mono-data font-semibold">
-                  {formatMoney(option.monthlyCost, currencySymbol)}
+                  {formatUsd(option.monthlyCost)}
                 </td>
                 <td className="py-3 pr-3 text-right font-mono-data font-semibold">
-                  {formatMoney(option.yearlyCost, currencySymbol)}
+                  {formatUsd(option.yearlyCost)}
                 </td>
                 <td className={`py-3 text-right font-mono-data font-semibold ${confidenceTone(option.confidence)}`}>
                   {option.confidence}%

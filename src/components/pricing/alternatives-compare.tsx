@@ -11,7 +11,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { OptionCostEstimate } from '@/types';
-import { formatMoney, confidenceTone } from './format';
+import { confidenceTone } from './format';
+import { useCurrency } from '@/hooks/use-currency';
 
 const TYPE_LABEL: Record<OptionCostEstimate['optionType'], string> = {
   performance: 'Performance',
@@ -23,15 +24,17 @@ interface AlternativesCompareProps {
   options: OptionCostEstimate[];
   activeOptionId: string | null;
   onSelect: (id: string) => void;
-  currencySymbol: string;
+  /** Customer's original currency to display in. */
+  currency: string;
 }
 
 export function AlternativesCompare({
   options,
   activeOptionId,
   onSelect,
-  currencySymbol,
+  currency,
 }: AlternativesCompareProps) {
+  const { formatFromUsd, format, convertFromUsd } = useCurrency();
   const ordered = [...options].sort((a, b) => {
     const order = { balanced: 0, performance: 1, budget: 2 };
     return order[a.optionType] - order[b.optionType];
@@ -65,8 +68,8 @@ export function AlternativesCompare({
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v) => `${currencySymbol}${(v / 1000).toFixed(1)}k`}
-                width={48}
+                tickFormatter={(v) => `${format(convertFromUsd(Number(v), currency) / 1000, currency, { maximumFractionDigits: 1 })}k`}
+                width={54}
               />
               <Tooltip
                 cursor={{ fill: 'var(--color-surface-raised)', opacity: 0.4 }}
@@ -77,7 +80,7 @@ export function AlternativesCompare({
                   fontSize: 12,
                 }}
                 formatter={(value) => [
-                  `${formatMoney(Number(Array.isArray(value) ? value[0] : value ?? 0), currencySymbol)} / mo`,
+                  `${formatFromUsd(Number(Array.isArray(value) ? value[0] : value ?? 0), currency)} / mo`,
                   'Estimated cost',
                 ]}
               />
@@ -112,11 +115,11 @@ export function AlternativesCompare({
                   {o.optionId === cheapestId && <Badge variant="success">Lowest est.</Badge>}
                 </div>
                 <div className="mt-2 font-mono-data text-base font-semibold text-foreground">
-                  {formatMoney(o.monthlyCost, currencySymbol)}
+                  {formatFromUsd(o.monthlyCost, currency)}
                   <span className="text-[10px] font-normal text-muted-foreground"> /mo est.</span>
                 </div>
                 <div className="mt-0.5 text-[10px] text-muted-foreground">
-                  {formatMoney(o.yearlyCost, currencySymbol)}/yr ·{' '}
+                  {formatFromUsd(o.yearlyCost, currency)}/yr ·{' '}
                   <span className={confidenceTone(o.confidence)}>{o.confidence}% confidence</span>
                 </div>
               </button>

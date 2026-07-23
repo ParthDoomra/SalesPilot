@@ -1,32 +1,48 @@
+"use client";
+
 import Link from "next/link";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, MessageSquare } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { RECENT_CONVERSATIONS, NOTIFICATIONS } from "@/lib/mock-data";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 
 export function AIActivityWidget() {
+  const { totalAIGenerations, architectureCount, pricingReportCount, proposalCount } = useDashboardData();
+
+  const rows = [
+    { label: "Architectures generated", value: architectureCount },
+    { label: "Pricing reports", value: pricingReportCount },
+    { label: "Proposals", value: proposalCount },
+  ];
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-signal" /> AI activity
         </CardTitle>
-        <CardDescription>Credit usage this billing cycle</CardDescription>
+        <CardDescription>AI generations across the workspace</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-baseline justify-between text-sm">
-          <span className="font-medium">3,420 / 5,000 credits</span>
-          <span className="text-muted-foreground">68%</span>
+        <div className="flex items-baseline gap-2">
+          <span className="font-display text-2xl font-semibold text-foreground">{totalAIGenerations}</span>
+          <span className="text-xs text-muted-foreground">total AI generations</span>
         </div>
-        <Progress value={68} className="mt-2" />
-        <p className="mt-3 text-xs text-muted-foreground">Resets in 12 days · placeholder, connects to real usage later</p>
+        <div className="mt-3 space-y-2">
+          {rows.map((r) => (
+            <div key={r.label} className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">{r.label}</span>
+              <span className="font-mono-data font-medium text-foreground">{r.value}</span>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
 }
 
 export function RecentConversationsWidget() {
+  const { recentConversations } = useDashboardData();
+
   return (
     <Card>
       <CardHeader>
@@ -34,71 +50,25 @@ export function RecentConversationsWidget() {
         <CardDescription>Latest AI Workspace threads</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
-        {RECENT_CONVERSATIONS.map((c) => (
-          <div key={c.id} className="text-sm">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">{c.project}</span>
-              <span className="text-xs text-muted-foreground">{c.time}</span>
-            </div>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">{c.preview}</p>
+        {recentConversations.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-4 text-center">
+            <MessageSquare className="h-6 w-6 text-muted-foreground/30" />
+            <p className="text-xs text-muted-foreground">No AI conversations yet.</p>
           </div>
-        ))}
+        ) : (
+          recentConversations.map((c) => (
+            <Link key={c.id} href={`/projects/${c.projectId}`} className="text-sm hover:text-signal">
+              <div className="flex items-center justify-between">
+                <span className="truncate font-medium">{c.title || "Untitled conversation"}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{c.messageCount} msg</span>
+              </div>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">{c.updatedAt}</p>
+            </Link>
+          ))
+        )}
         <Link href="/ai-workspace" className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-signal hover:underline">
           Open AI Workspace <ArrowRight className="h-3 w-3" />
         </Link>
-      </CardContent>
-    </Card>
-  );
-}
-
-const TEAM = [
-  { name: "Jordan Avery", role: "Owner", initials: "JA" },
-  { name: "Priya Nathan", role: "Sales Engineer", initials: "PN" },
-  { name: "Marcus Ilić", role: "Admin", initials: "MI" },
-  { name: "Renata Oduya", role: "Viewer", initials: "RO" },
-];
-
-export function TeamMembersWidget() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Team members</CardTitle>
-        <CardDescription>6 members in Northbeam Consulting</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {TEAM.map((m) => (
-          <div key={m.name} className="flex items-center gap-3">
-            <Avatar>
-              <AvatarFallback>{m.initials}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium">{m.name}</div>
-              <div className="text-xs text-muted-foreground">{m.role}</div>
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-export function NotificationsWidget() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Notifications</CardTitle>
-        <CardDescription>Recent workspace events</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {NOTIFICATIONS.map((n) => (
-          <div key={n.id} className="text-sm">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">{n.title}</span>
-              <span className="text-xs text-muted-foreground">{n.time}</span>
-            </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">{n.detail}</p>
-          </div>
-        ))}
       </CardContent>
     </Card>
   );

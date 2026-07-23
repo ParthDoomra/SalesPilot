@@ -14,9 +14,15 @@ import {
 import { ProjectStatusBadge } from "@/components/projects/status-badge";
 import type { Project } from "@/lib/types";
 import { useProjectsStore } from "@/lib/projects-store";
+import { useProjectPricingStore } from "@/lib/project-pricing-store";
+import { resolveProjectCurrency } from "@/lib/project-currency";
+import { useCurrency } from "@/hooks/use-currency";
 
 export function ProjectCard({ project, onEdit }: { project: Project; onEdit: (p: Project) => void }) {
   const { toggleArchive, deleteProject } = useProjectsStore();
+  const pricingEstimate = useProjectPricingStore((s) => s.byProject[project.id] ?? null);
+  const { code: currencyCode, monthlyEstimateUsd } = resolveProjectCurrency(project, { pricingEstimate });
+  const { formatFromUsd } = useCurrency();
 
   return (
     <Card className="flex flex-col p-5 transition-colors hover:border-signal/40">
@@ -66,7 +72,7 @@ export function ProjectCard({ project, onEdit }: { project: Project; onEdit: (p:
           <Calendar className="h-3 w-3" /> Updated {project.updatedAt}
         </span>
         <span className="font-mono-data font-medium text-foreground">
-          {project.monthlyEstimate > 0 ? `$${project.monthlyEstimate.toLocaleString()}/mo` : "—"}
+          {monthlyEstimateUsd > 0 ? `${formatFromUsd(monthlyEstimateUsd, currencyCode)}/mo` : "—"}
         </span>
       </div>
     </Card>
