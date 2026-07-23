@@ -62,7 +62,10 @@ export function useRequirements(projectId: string) {
   /**
    * Apply a manual override to a field.
    */
-  async function overrideField(field: RequirementFieldKey, value: unknown) {
+  async function overrideField(
+    field: RequirementFieldKey,
+    value: unknown,
+  ): Promise<{ ok: boolean; error?: string }> {
     try {
       const res = await fetch(`/api/projects/${projectId}/requirements`, {
         method: 'PUT',
@@ -76,9 +79,40 @@ export function useRequirements(projectId: string) {
           syncProjectFromRequirement(projectId, data.requirement);
         }
         setEditingField(null);
+        return { ok: true };
       }
+      const data = await res.json().catch(() => ({}));
+      return { ok: false, error: data.error || 'Failed to save update.' };
     } catch {
-      // Silent fail
+      return { ok: false, error: 'Network error saving update.' };
+    }
+  }
+
+  /**
+   * Apply manual overrides to multiple fields in a single batch request.
+   */
+  async function overrideFields(
+    fields: Array<{ field: RequirementFieldKey; value: unknown }>,
+  ): Promise<{ ok: boolean; error?: string }> {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/requirements`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRequirement(data.requirement);
+        if (data.requirement) {
+          syncProjectFromRequirement(projectId, data.requirement);
+        }
+        setEditingField(null);
+        return { ok: true };
+      }
+      const data = await res.json().catch(() => ({}));
+      return { ok: false, error: data.error || 'Failed to save updates.' };
+    } catch {
+      return { ok: false, error: 'Network error saving updates.' };
     }
   }
 
@@ -122,6 +156,52 @@ export function useRequirements(projectId: string) {
     }
   }
 
+  /**
+   * Document upload action: uploads PDF, DOCX, or Excel file and extracts structured requirements.
+   */
+  async function extractFromDocument(
+    file: File,
+    intakeMethod: 'pdf' | 'docx' | 'excel',
+  ): Promise<{ ok: boolean; changedFields?: RequirementFieldKey[]; message?: string; error?: string }> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('projectId', projectId);
+      formData.append('intakeMethod', intakeMethod);
+
+      const res = await fetch('/api/requirements/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { ok: false, error: data.error || `Failed to parse ${intakeMethod.toUpperCase()} document.` };
+      }
+
+      setRequirement(data.requirement);
+      if (data.requirement) {
+        syncProjectFromRequirement(projectId, data.requirement);
+      }
+
+      logActivity(projectId, {
+        type: 'requirements_uploaded',
+        title: `${intakeMethod.toUpperCase()} requirement document uploaded`,
+        detail: file.name,
+        source: 'user',
+      });
+      logActivity(projectId, {
+        type: 'requirement_analysis',
+        title: `AI requirement analysis completed from ${intakeMethod.toUpperCase()}`,
+        source: 'ai',
+      });
+
+      return { ok: true, changedFields: data.changedFields, message: data.message };
+    } catch {
+      return { ok: false, error: `Failed to process ${intakeMethod.toUpperCase()} upload.` };
+    }
+  }
+
   return {
     requirement,
     validationIssues,
@@ -131,7 +211,9 @@ export function useRequirements(projectId: string) {
     loadRequirement,
     loadVersions,
     overrideField,
+    overrideFields,
     extractFromText,
+    extractFromDocument,
     setEditingField,
   };
 }

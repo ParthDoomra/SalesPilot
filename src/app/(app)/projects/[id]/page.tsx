@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Building2, Calendar, User, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -46,19 +46,45 @@ const ProposalContainer = React.lazy(() =>
   })),
 );
 
-const TABS = ['Overview', 'Conversation', 'Requirements', 'Architecture', 'Pricing', 'Proposal', 'Activity', 'Settings'];
+const NegotiationContainer = React.lazy(() =>
+  import('@/components/negotiation/negotiation-container').then((m) => ({
+    default: m.NegotiationContainer,
+  })),
+);
+
+const TABS = ['Overview', 'Conversation', 'Requirements', 'Architecture', 'Pricing', 'Proposal', 'Negotiation AI', 'Activity', 'Settings'];
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { projects } = useProjectsStore();
   const { user } = useAuth();
   const project = projects.find((p) => p.id === id);
   const { currency: projectCurrency, formatFromUsd, monthlyEstimateUsd } = useProjectCurrency(id);
-  const [activeTab, setActiveTab] = React.useState('Overview');
+
+  const initialTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = React.useState<string>(() => {
+    if (initialTab && TABS.includes(initialTab)) {
+      return initialTab;
+    }
+    return 'Overview';
+  });
+
+  React.useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && TABS.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   // The project owner is the authenticated user's profile name (never a hardcoded value).
   const projectOwner = user?.displayName || user?.fullName || user?.email || 'Unknown';
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    router.push(`/projects/${id}?tab=${tab}`, { scroll: false });
+  };
 
   if (!project) {
     return (
@@ -103,7 +129,7 @@ export default function ProjectDetailPage() {
         />
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           {TABS.map((t) => (
             <TabsTrigger key={t} value={t}>
@@ -195,7 +221,7 @@ export default function ProjectDetailPage() {
             }
           >
             <Card className="p-5">
-              <PricingContainer projectId={project.id} />
+              <PricingContainer projectId={project.id} onNavigateToNegotiation={() => setActiveTab('Negotiation AI')} />
             </Card>
           </React.Suspense>
         </TabsContent>
@@ -217,6 +243,23 @@ export default function ProjectDetailPage() {
           </React.Suspense>
         </TabsContent>
 
+        {/* Phase 6: Negotiation AI tab — AI Sales Engineer Assistant */}
+        <TabsContent value="Negotiation AI">
+          <React.Suspense
+            fallback={
+              <Card>
+                <CardContent className="flex items-center justify-center p-20">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-signal border-t-transparent" />
+                </CardContent>
+              </Card>
+            }
+          >
+            <Card className="min-h-[600px] h-[calc(100vh-16rem)] flex flex-col overflow-hidden p-0">
+              <NegotiationContainer projectId={project.id} />
+            </Card>
+          </React.Suspense>
+        </TabsContent>
+
         {/* Activity — real timeline derived from project data + recorded events */}
         <TabsContent value="Activity">
           <ProjectActivity projectId={project.id} />
@@ -228,7 +271,7 @@ export default function ProjectDetailPage() {
         </TabsContent>
 
         {/* Placeholder tabs for future phases */}
-        {TABS.filter((t) => !['Overview', 'Conversation', 'Requirements', 'Architecture', 'Pricing', 'Proposal', 'Activity', 'Settings'].includes(t)).map((t) => (
+        {TABS.filter((t) => !['Overview', 'Conversation', 'Requirements', 'Architecture', 'Pricing', 'Proposal', 'Negotiation AI', 'Activity', 'Settings'].includes(t)).map((t) => (
           <TabsContent key={t} value={t}>
             <PlaceholderTab name={t} />
           </TabsContent>

@@ -5,7 +5,7 @@
 
 "use client";
 
-import { Wallet, CalendarClock, CalendarRange, Scale, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Wallet, CalendarClock, CalendarRange, Scale, CheckCircle2, AlertTriangle, Bot } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { BudgetAnalysis } from '@/types';
@@ -15,9 +15,11 @@ interface BudgetSummaryProps {
   analysis: BudgetAnalysis;
   /** Customer's original currency to display in. */
   currency?: string;
+  /** Called when the user clicks the "Negotiate with AI" button when over budget. */
+  onNavigateToNegotiation?: () => void;
 }
 
-export function BudgetSummary({ analysis, currency }: BudgetSummaryProps) {
+export function BudgetSummary({ analysis, currency, onNavigateToNegotiation }: BudgetSummaryProps) {
   const { formatFromUsd, format } = useCurrency();
   const {
     hasBudget,
@@ -101,18 +103,30 @@ export function BudgetSummary({ analysis, currency }: BudgetSummaryProps) {
 
       {withinKnown && utilizationPercent !== null && (
         <Card className="p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">Budget utilization</span>
-            {isOver ? (
-              <Badge variant="danger">
-                <AlertTriangle className="h-3 w-3" /> Over Budget
-              </Badge>
-            ) : (
-              <Badge variant="success">
-                <CheckCircle2 className="h-3 w-3" /> Within Budget
-              </Badge>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-foreground">Budget utilization</span>
+              {isOver ? (
+                <Badge variant="danger">
+                  <AlertTriangle className="h-3 w-3" /> Over Budget
+                </Badge>
+              ) : (
+                <Badge variant="success">
+                  <CheckCircle2 className="h-3 w-3" /> Within Budget
+                </Badge>
+              )}
+            </div>
+
+            {isOver && onNavigateToNegotiation && (
+              <button
+                onClick={onNavigateToNegotiation}
+                className="flex items-center gap-2 rounded-xl bg-signal px-4 py-2 text-xs font-semibold text-signal-foreground hover:opacity-90 shadow-sm transition-all"
+              >
+                <Bot className="h-4 w-4" /> Negotiate with AI
+              </button>
             )}
           </div>
+
           <div className="mt-3 flex items-center gap-3">
             <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-raised">
               <div

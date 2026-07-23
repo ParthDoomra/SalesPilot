@@ -13,6 +13,7 @@ import { RequirementProgress } from './requirement-progress';
 import { useRequirements } from '@/hooks/use-requirements';
 import { REQUIREMENT_FIELD_META, FIELD_GROUPS } from '@/constants/requirement-fields';
 import type { RequirementField, RequirementFieldKey, RequirementModel } from '@/types';
+import { REQUIREMENT_FIELD_KEYS, emptyField } from '@/types';
 
 interface RequirementPanelProps {
   projectId: string;
@@ -130,7 +131,7 @@ export function RequirementPanel({ projectId, onShowVersions }: RequirementPanel
                   </h4>
                   <div className="rounded-lg border border-border-subtle bg-surface">
                     {fields.map((meta) => {
-                      const field = requirement[meta.key] as RequirementField<unknown>;
+                      const field = (requirement[meta.key] as RequirementField<unknown> | undefined) ?? emptyField();
                       return (
                         <RequirementFieldRow
                           key={meta.key}
@@ -213,15 +214,8 @@ function PanelHeader({
  * ready for consumption by Phase 3 (Architecture Generator).
  */
 function buildPhase3ArchitecturePayload(req: RequirementModel) {
-  const fields = [
-    'company', 'industry', 'employees', 'users', 'region', 'solutionType',
-    'budget', 'budgetCurrency', 'budgetPeriod', 'cloudProvider', 'database',
-    'backup', 'disasterRecovery', 'storage', 'compliance', 'security',
-    'networking', 'availability',
-  ] as const;
-
   const structuredRequirements: Record<string, unknown> = {};
-  for (const key of fields) {
+  for (const key of REQUIREMENT_FIELD_KEYS) {
     const f = req[key] as RequirementField<unknown> | undefined;
     structuredRequirements[key] = {
       value: f?.value ?? null,

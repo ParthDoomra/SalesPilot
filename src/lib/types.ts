@@ -12,6 +12,7 @@ export interface User {
   avatarColor: string;
   orgId: string;
   orgName: string;
+  photoURL?: string | null;
 }
 
 export type ProjectStatus =

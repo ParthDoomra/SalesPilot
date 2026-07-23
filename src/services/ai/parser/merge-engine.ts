@@ -99,14 +99,23 @@ export function applyManualOverride(
   value: unknown,
 ): RequirementModel {
   const now = new Date().toISOString();
-  const existing = current[field] as RequirementField<unknown>;
+  const existing = (current[field] as RequirementField<unknown> | undefined) ?? {
+    value: null,
+    confidence: 0,
+    source: 'ai',
+    aiValue: null,
+    manualOverride: null,
+    updatedAt: now,
+  };
+
+  const normalized = normalizeValue(field, value);
 
   const updated = {
     ...current,
     [field]: {
       ...existing,
-      value,
-      manualOverride: value,
+      value: normalized,
+      manualOverride: normalized,
       source: 'manual' as const,
       confidence: 100,
       updatedAt: now,

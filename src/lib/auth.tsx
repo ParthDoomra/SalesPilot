@@ -11,6 +11,7 @@ import {
   signInWithGoogle,
   signOutUser,
   completeGoogleRedirectIfPresent,
+  updateUserProfileInFirestore,
 } from "@/services/firebase/auth";
 import { firebaseLogger } from "@/utils/logger";
 
@@ -28,6 +29,7 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (name: string, email: string, password: string) => Promise<{ error?: string }>;
   signInWithGoogle: () => Promise<{ error?: string }>;
+  updateUserProfile: (data: { fullName: string; photoURL?: string | null }) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -142,6 +144,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return {};
   }, []);
 
+  const updateUserProfile = React.useCallback(
+    async (data: { fullName: string; photoURL?: string | null }) => {
+      if (!user) return { error: "No active session." };
+      setError(null);
+      try {
+        const updatedUser = await updateUserProfileInFirestore(user.id, data);
+        setUser(updatedUser);
+        return {};
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { error: msg || "Failed to update profile." };
+      }
+    },
+    [user]
+  );
+
   const signOut = React.useCallback(async () => {
     setError(null);
     try {
@@ -162,9 +180,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn,
       signUp,
       signInWithGoogle: handleGoogleSignIn,
+      updateUserProfile,
       signOut,
     }),
-    [user, status, error, signIn, signUp, handleGoogleSignIn, signOut]
+    [user, status, error, signIn, signUp, handleGoogleSignIn, updateUserProfile, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

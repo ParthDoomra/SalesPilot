@@ -14,6 +14,7 @@
 
 import type { AgentResponse, ConversationContext, ValidationIssue } from '@/types';
 import type { RequirementModel, RequirementFieldKey } from '@/types';
+import { REQUIREMENT_FIELD_KEYS } from '@/types';
 import { llm } from '@/services/ai/llm-service';
 import {
   buildExtractionSystemPrompt,
@@ -229,14 +230,8 @@ export async function extractRequirementsFromText(
  */
 function requirementToSimpleJson(req: RequirementModel): string {
   const simple: Record<string, unknown> = {};
-  const fieldKeys = [
-    'company', 'industry', 'employees', 'users', 'region', 'solutionType',
-    'budget', 'budgetCurrency', 'budgetPeriod', 'cloudProvider', 'database',
-    'backup', 'disasterRecovery', 'storage', 'compliance', 'security',
-    'networking', 'availability',
-  ] as const;
 
-  for (const key of fieldKeys) {
+  for (const key of REQUIREMENT_FIELD_KEYS) {
     const field = req[key];
     if (field && typeof field === 'object' && 'value' in field) {
       simple[key] = (field as { value: unknown }).value;
@@ -246,17 +241,10 @@ function requirementToSimpleJson(req: RequirementModel): string {
 }
 
 function computeOverallConfidence(req: RequirementModel): number {
-  const fieldKeys = [
-    'company', 'industry', 'employees', 'users', 'region', 'solutionType',
-    'budget', 'budgetCurrency', 'budgetPeriod', 'cloudProvider', 'database',
-    'backup', 'disasterRecovery', 'storage', 'compliance', 'security',
-    'networking', 'availability',
-  ] as const;
-
   let totalConfidence = 0;
   let fieldCount = 0;
 
-  for (const key of fieldKeys) {
+  for (const key of REQUIREMENT_FIELD_KEYS) {
     const field = req[key];
     if (field && typeof field === 'object' && 'value' in field) {
       const f = field as { value: unknown; confidence: number };

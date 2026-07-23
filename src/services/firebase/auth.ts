@@ -46,11 +46,16 @@ function mapFirebaseUserToAppUser(
   firebaseUser: FirebaseUser,
   data?: DocumentData | null
 ): User {
-  const name =
+  const savedName =
+    (data?.fullName as string | undefined) ||
     (data?.name as string | undefined) ||
+    (data?.displayName as string | undefined);
+
+  const initialName =
     firebaseUser.displayName ||
-    firebaseUser.email?.split("@")[0] ||
-    "User";
+    (firebaseUser.email ? firebaseUser.email.split("@")[0] : "User");
+
+  const name = savedName || initialName;
 
   return {
     id: firebaseUser.uid,
@@ -62,7 +67,49 @@ function mapFirebaseUserToAppUser(
     avatarColor: (data?.avatarColor as string | undefined) || avatarColorFor(firebaseUser.uid),
     orgId: (data?.orgId as string | undefined) || `org_${firebaseUser.uid.slice(0, 8)}`,
     orgName: (data?.orgName as string | undefined) || "My Organization",
+    photoURL: (data?.photoURL as string | undefined) ?? firebaseUser.photoURL ?? null,
   };
+}
+
+/**
+ * Save updated user profile (Full Name & Photo URL) to Firestore and Firebase Auth.
+ */
+export async function updateUserProfileInFirestore(
+  uid: string,
+  updates: { fullName: string; photoURL?: string | null }
+): Promise<User> {
+  const db = getFirebaseDb();
+  const userRef = doc(db, USERS_COLLECTION, uid);
+  const auth = getFirebaseAuth();
+
+  const payload: Record<string, unknown> = {
+    name: updates.fullName,
+    displayName: updates.fullName,
+    fullName: updates.fullName,
+    photoURL: updates.photoURL ?? null,
+    updatedAt: serverTimestamp(),
+  };
+
+  firebaseLogger.info("Firestore write: update user profile", { uid, updates });
+  await setDoc(userRef, payload, { merge: true });
+
+  if (auth.currentUser) {
+    try {
+      await updateProfile(auth.currentUser, {
+        displayName: updates.fullName,
+        photoURL: updates.photoURL ?? undefined,
+      });
+    } catch (err) {
+      firebaseLogger.warn("Failed to update Auth display name / photoURL", { error: String(err) });
+    }
+  }
+
+  const snapshot = await getDocFromServer(userRef);
+  if (snapshot.exists()) {
+    return mapFirebaseUserToAppUser(auth.currentUser!, snapshot.data());
+  }
+
+  return mapFirebaseUserToAppUser(auth.currentUser!, payload);
 }
 
 /**

@@ -15,6 +15,7 @@ import { CompatibilityWarningPanel } from './compatibility-warning-panel';
 import { DecisionPanel } from './decision-panel';
 import { ExportDialog } from './export-dialog';
 import { ArchitectureTimeline } from './architecture-timeline';
+import { AiRecommendationCard } from './ai-recommendation-card';
 import type { CloudProvider } from '@/types';
 
 interface ArchitectureContainerProps {
@@ -37,6 +38,9 @@ export function ArchitectureContainer({ projectId, onGeneratePricing }: Architec
     error,
     exportOpen,
     versions,
+    recommendation,
+    recommendationDismissed,
+    dismissRecommendation,
     generate,
     selectOption,
     selectProvider,
@@ -47,6 +51,16 @@ export function ArchitectureContainer({ projectId, onGeneratePricing }: Architec
   const [activeTab, setActiveTab] = React.useState<'canvas' | 'services'>('canvas');
 
   const selectedOption = architecture?.options.find((o) => o.id === selectedOptionId) || architecture?.options[0];
+
+  // Show the AI recommendation card only when the merit-best provider differs
+  // from the customer's preference and hasn't already been adopted/dismissed.
+  const showRecommendation =
+    !!recommendation &&
+    !recommendation.isPreferredBest &&
+    recommendation.preferred !== null &&
+    !recommendationDismissed &&
+    architecture?.selectedProvider !== recommendation.recommended &&
+    !isGenerating;
 
   // The selection is already persisted to the project state (via selectOption).
   // "Generate Pricing" just confirms it and hands off to the Pricing module.
@@ -138,6 +152,16 @@ export function ArchitectureContainer({ projectId, onGeneratePricing }: Architec
       {architecture && selectedOption && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
           <div className="lg:col-span-3 space-y-6">
+            {/* AI provider recommendation (only when it differs from preference) */}
+            {showRecommendation && recommendation && (
+              <AiRecommendationCard
+                recommendation={recommendation}
+                busy={isGenerating || isUpdating}
+                onUseRecommendation={() => generate(recommendation.recommended)}
+                onKeepPreference={dismissRecommendation}
+              />
+            )}
+
             {/* Compatibility Warning banner */}
             <CompatibilityWarningPanel warnings={architecture.compatibilityWarnings} />
 

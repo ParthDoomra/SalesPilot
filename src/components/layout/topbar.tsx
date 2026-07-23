@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Menu, LogOut, User, Settings as SettingsIcon } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,8 +20,9 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { user, signOut } = useAuth();
   const router = useRouter();
 
-  const initials = user?.name
-    ? user.name.split(" ").map((p) => p[0]).join("").slice(0, 2)
+  const displayName = user?.fullName || user?.displayName || user?.name || "User";
+  const initials = displayName
+    ? displayName.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()
     : "??";
 
   return (
@@ -41,14 +42,15 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="ml-1 flex items-center gap-2 rounded-md p-1 hover:bg-surface-raised" aria-label="Account menu">
-              <Avatar>
-                <AvatarFallback style={{ backgroundColor: undefined }}>{initials}</AvatarFallback>
+              <Avatar className="h-8 w-8">
+                {user?.photoURL ? <AvatarImage src={user.photoURL} alt={displayName} /> : null}
+                <AvatarFallback style={{ backgroundColor: user?.avatarColor }}>{initials}</AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
-              <div className="font-medium">{user?.name}</div>
+              <div className="font-medium">{displayName}</div>
               <div className="truncate text-xs font-normal text-muted-foreground">{user?.email}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

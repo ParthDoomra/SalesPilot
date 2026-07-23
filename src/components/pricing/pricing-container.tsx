@@ -21,9 +21,10 @@ import { CostExplanation } from './cost-explanation';
 
 interface PricingContainerProps {
   projectId: string;
+  onNavigateToNegotiation?: () => void;
 }
 
-export function PricingContainer({ projectId }: PricingContainerProps) {
+export function PricingContainer({ projectId, onNavigateToNegotiation }: PricingContainerProps) {
   const {
     estimate,
     isLoading,
@@ -148,7 +149,7 @@ export function PricingContainer({ projectId }: PricingContainerProps) {
         return (
         <div className="space-y-6">
           {/* Budget: customer budget, monthly/annual, difference, utilization, status */}
-          <BudgetSummary analysis={activeOption.budgetAnalysis} currency={displayCurrency} />
+          <BudgetSummary analysis={activeOption.budgetAnalysis} currency={displayCurrency} onNavigateToNegotiation={onNavigateToNegotiation} />
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Cost breakdown by category */}

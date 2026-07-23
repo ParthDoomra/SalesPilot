@@ -25,9 +25,11 @@ import {
   AlertTriangle,
   ArrowRight,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { ChatPanel } from './chat-panel';
 import { FillMissingFields } from './fill-missing-fields';
 import { useRequirements } from '@/hooks/use-requirements';
+import { useArchitecture } from '@/hooks/use-architecture';
 import { REQUIRED_FIELDS, FIELD_META_MAP } from '@/constants/requirement-fields';
 import type { RequirementFieldKey } from '@/types';
 
@@ -48,13 +50,34 @@ const METHODS: Array<{ key: InputMethod; label: string; icon: React.ComponentTyp
 ];
 
 export function RequirementIntake({ projectId, conversationId, onGenerateArchitecture }: RequirementIntakeProps) {
-  const { requirement, extractFromText, overrideField } = useRequirements(projectId);
+  const router = useRouter();
+  const { requirement, extractFromText, extractFromDocument, overrideField, overrideFields } = useRequirements(projectId);
+  const { generate: generateArchitecture, isGenerating: isGeneratingArch } = useArchitecture(projectId);
 
   const [method, setMethod] = React.useState<InputMethod>('paste');
   const [text, setText] = React.useState('');
   const [isExtracting, setIsExtracting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [lastResult, setLastResult] = React.useState<{ count: number; message: string } | null>(null);
+
+  async function handleGenerateArchitecture() {
+    if (isGeneratingArch) return;
+    setError(null);
+    try {
+      console.log('[DEBUG ARCH] Generating architecture for projectId:', projectId);
+      await generateArchitecture();
+      console.log('[DEBUG ARCH] Architecture generated successfully');
+      if (onGenerateArchitecture) {
+        onGenerateArchitecture();
+      } else {
+        router.push(`/projects/${projectId}`);
+      }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error('[DEBUG ARCH ERROR] Failed to generate architecture:', errorMsg, err);
+      setError(`Architecture generation failed: ${errorMsg}`);
+    }
+  }
 
   const completion = requirement?.completionPercentage ?? 0;
   const missingFields = (requirement?.missingFields ?? []) as RequirementFieldKey[];
@@ -77,9 +100,24 @@ export function RequirementIntake({ projectId, conversationId, onGenerateArchite
     setIsExtracting(false);
   }
 
+  async function handleDocUpload(file: File) {
+    if (isExtracting) return;
+    setIsExtracting(true);
+    setError(null);
+    setLastResult(null);
+    const res = await extractFromDocument(file, method as 'pdf' | 'docx' | 'excel');
+    if (res.ok) {
+      setLastResult({ count: res.changedFields?.length ?? 0, message: res.message ?? '' });
+    } else {
+      setError(res.error ?? 'Document extraction failed.');
+    }
+    setIsExtracting(false);
+  }
+
   async function handleFillMissing(values: Array<{ field: RequirementFieldKey; value: unknown }>) {
-    for (const { field, value } of values) {
-      await overrideField(field, value);
+    const res = await overrideFields(values);
+    if (!res.ok) {
+      throw new Error(res.error || 'Failed to save field updates.');
     }
   }
 
@@ -151,7 +189,12 @@ export function RequirementIntake({ projectId, conversationId, onGenerateArchite
         )}
 
         {(method === 'pdf' || method === 'docx' || method === 'excel') && (
-          <UploadPlaceholder method={method} />
+          <DocumentUploader
+            key={method}
+            method={method}
+            onUpload={handleDocUpload}
+            isExtracting={isExtracting}
+          />
         )}
 
         {method === 'conversation' && (
@@ -210,11 +253,15 @@ export function RequirementIntake({ projectId, conversationId, onGenerateArchite
               field is captured in the Requirement JSON.
             </p>
             <button
-              onClick={onGenerateArchitecture}
-              disabled={!onGenerateArchitecture}
+              onClick={handleGenerateArchitecture}
+              disabled={isGeneratingArch}
               className="mx-auto mt-4 flex items-center gap-1.5 rounded-lg bg-signal px-5 py-2.5 text-sm font-medium text-signal-foreground hover:opacity-90 disabled:opacity-50"
             >
-              <Sparkles className="h-4 w-4" /> Generate Architecture <ArrowRight className="h-4 w-4" />
+              {isGeneratingArch ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Generating Architecture…</>
+              ) : (
+                <><Sparkles className="h-4 w-4" /> Generate Architecture <ArrowRight className="h-4 w-4" /></>
+              )}
             </button>
           </div>
         )}
@@ -286,27 +333,116 @@ function MissingFieldDetection({
   );
 }
 
-function UploadPlaceholder({ method }: { method: 'pdf' | 'docx' | 'excel' }) {
+function DocumentUploader({
+  method,
+  onUpload,
+  isExtracting,
+}: {
+  method: 'pdf' | 'docx' | 'excel';
+  onUpload: (file: File) => Promise<void>;
+  isExtracting: boolean;
+}) {
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
   const label = method.toUpperCase();
+  const acceptMap = {
+    pdf: '.pdf',
+    docx: '.docx,.doc',
+    excel: '.xlsx,.xls,.csv',
+  };
+
+  const IconMap = {
+    pdf: FileText,
+    docx: FileType,
+    excel: FileSpreadsheet,
+  };
+  const Icon = IconMap[method];
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setSelectedFile(e.dataTransfer.files[0]);
+    }
+  }
+
+  async function handleExtract() {
+    if (!selectedFile || isExtracting) return;
+    await onUpload(selectedFile);
+    setSelectedFile(null);
+  }
+
   return (
-    <div className="rounded-xl border border-dashed border-border-default bg-surface/50 p-10 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface-raised text-muted-foreground">
-        <FileText className="h-6 w-6" />
+    <div
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={handleDrop}
+      className="rounded-xl border border-dashed border-border-default bg-surface/50 p-8 text-center"
+    >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={acceptMap[method]}
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface-raised text-signal">
+        <Icon className="h-6 w-6" />
       </div>
-      <h4 className="mt-4 font-display text-sm font-semibold text-foreground">
-        {label} upload coming soon
+
+      <h4 className="mt-3 font-display text-sm font-semibold text-foreground">
+        Upload {label} Document
       </h4>
-      <p className="mx-auto mt-2 max-w-sm text-xs text-muted-foreground">
-        Document parsing for {label} files is not wired up yet. For now, open the document, copy the
-        requirement text, and use <span className="font-medium text-foreground">Paste Text</span> to
-        extract it.
+      <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
+        Drag & drop your {label} requirement or infrastructure file here, or click to select.
       </p>
-      <button
-        disabled
-        className="mx-auto mt-4 flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-border-default bg-surface px-4 py-2 text-xs font-medium text-muted-foreground/60"
-      >
-        <FileText className="h-3.5 w-3.5" /> Select {label} file
-      </button>
+
+      {selectedFile ? (
+        <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-surface px-3 py-1.5 text-xs font-medium text-foreground">
+          <Icon className="h-4 w-4 text-signal" />
+          <span className="truncate max-w-[200px]">{selectedFile.name}</span>
+          <button
+            type="button"
+            onClick={() => setSelectedFile(null)}
+            className="ml-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            ✕
+          </button>
+        </div>
+      ) : null}
+
+      <div className="mt-5 flex items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isExtracting}
+          className="flex items-center gap-1.5 rounded-lg border border-border-default bg-surface px-4 py-2 text-xs font-medium text-foreground hover:bg-surface-raised disabled:opacity-50"
+        >
+          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+          {selectedFile ? 'Change File' : `Select ${label} File`}
+        </button>
+
+        {selectedFile && (
+          <button
+            type="button"
+            onClick={handleExtract}
+            disabled={isExtracting}
+            className="flex items-center gap-1.5 rounded-lg bg-signal px-4 py-2 text-xs font-medium text-signal-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {isExtracting ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Extracting…</>
+            ) : (
+              <><Sparkles className="h-3.5 w-3.5" /> Extract Requirements</>
+            )}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

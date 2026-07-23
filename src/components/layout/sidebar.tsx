@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/layout/logo";
 import { useAuth } from "@/lib/auth";
@@ -33,6 +34,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { user } = useAuth();
   const isAdmin = user?.role === "Owner" || user?.role === "Admin";
+
+  const displayName = user?.fullName || user?.displayName || user?.name || "User";
+  const initials = displayName
+    ? displayName.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()
+    : "??";
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border-subtle bg-surface">
@@ -92,9 +98,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="border-t border-border-subtle p-4">
-        <div className="rounded-md bg-surface-raised px-3 py-2.5 text-xs text-muted-foreground">
-          <div className="font-medium text-foreground">{user?.orgName ?? "Your organization"}</div>
-          <div className="mt-0.5">Professional plan · 6 of 10 seats</div>
+        <div className="flex items-center gap-3 rounded-md bg-surface-raised px-3 py-2.5">
+          <Avatar className="h-8 w-8 shrink-0">
+            {user?.photoURL ? <AvatarImage src={user.photoURL} alt={displayName} /> : null}
+            <AvatarFallback style={{ backgroundColor: user?.avatarColor }}>{initials}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1 text-xs">
+            <div className="truncate font-medium text-foreground">{displayName}</div>
+            <div className="truncate text-[11px] text-muted-foreground">{user?.orgName ?? "Your organization"}</div>
+          </div>
         </div>
       </div>
     </div>

@@ -9,11 +9,13 @@
 
 import * as React from 'react';
 import { Bot, FolderKanban, ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { WorkspaceLayout } from '@/components/workspace/workspace-layout';
 import { useProjectsStore } from '@/lib/projects-store';
 import { cn } from '@/lib/utils';
 
 export default function AIWorkspacePage() {
+  const router = useRouter();
   const { projects } = useProjectsStore();
   const activeProjects = projects.filter((p) => !p.archived);
   const [selectedProjectId, setSelectedProjectId] = React.useState<string | null>(null);
@@ -95,7 +97,10 @@ export default function AIWorkspacePage() {
       {/* Workspace */}
       {selectedProjectId && (
         <div className="flex-1">
-          <WorkspaceLayout projectId={selectedProjectId} />
+          <WorkspaceLayout
+            projectId={selectedProjectId}
+            onGenerateArchitecture={() => router.push(`/projects/${selectedProjectId}?tab=Architecture`)}
+          />
         </div>
       )}
     </div>

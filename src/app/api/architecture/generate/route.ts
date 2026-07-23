@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequirement, saveRequirement } from '@/services/firebase/requirements';
 import { generateArchitecture } from '@/services/ai/architecture-agent';
+import { recommendProvider } from '@/services/ai/cloud-recommender';
 import {
   getArchitectureByProject,
   saveArchitecture,
@@ -43,11 +44,18 @@ export async function POST(request: NextRequest) {
       await saveRequirement(requirement);
     }
 
-    // 2. Generate Architecture
+    // 2. Evaluate all three providers on merit (background) and pick the
+    //    effective provider. The customer's preferred provider is respected by
+    //    default; an explicit client override (e.g. "Use AI Recommendation")
+    //    always wins. The recommendation is returned so the UI can surface it.
+    const recommendation = recommendProvider(requirement);
+    const effectiveProvider =
+      providerOverride ?? recommendation.preferred ?? recommendation.recommended;
+
     const architecture = await generateArchitecture({
       projectId,
       requirement,
-      providerOverride,
+      providerOverride: effectiveProvider,
     });
 
     // 3. Keep a single architecture per project. When regenerating (e.g. a
@@ -69,7 +77,7 @@ export async function POST(request: NextRequest) {
     await saveRecommendations(projectId, architecture.recommendations);
     await saveDecisionLogs(projectId, architecture.decisionLogs);
 
-    return NextResponse.json({ architecture }, { status: 201 });
+    return NextResponse.json({ architecture, recommendation }, { status: 201 });
   } catch (err) {
     const classified = classifyError(err);
     return NextResponse.json({ error: classified.userMessage }, { status: 500 });

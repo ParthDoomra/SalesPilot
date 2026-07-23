@@ -12,6 +12,7 @@ import { getArchitectureByProject, saveArchitecture } from '@/services/firebase/
 import { getRequirement, saveRequirement } from '@/services/firebase/requirements';
 import { estimatePricing } from '@/services/ai/pricing';
 import { currencyService } from '@/services/currency';
+import { primeAzurePricing } from '@/services/pricing-providers';
 import type { ArchitectureModel, RequirementModel } from '@/types';
 import { classifyError } from '@/utils/error-handler';
 
@@ -28,6 +29,16 @@ async function primeExchangeRates(): Promise<void> {
   } catch {
     // Intentionally swallowed — see estimator error handling.
   }
+}
+
+/**
+ * Refresh the live Azure price index (Azure Retail Prices API) into the pricing
+ * catalog before estimating, replacing the previous mock figure. Cached for 24h;
+ * on failure the last cached/baseline value is used, so pricing never breaks.
+ * The estimator's formula is unchanged — only the Azure data source is live now.
+ */
+async function primePricingSources(): Promise<void> {
+  await Promise.all([primeExchangeRates(), primeAzurePricing()]);
 }
 
 /**
@@ -57,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (bodyRequirement) {
       await saveRequirement(bodyRequirement);
     }
-    await primeExchangeRates();
+    await primePricingSources();
     const estimate = estimatePricing(architecture, requirement);
     return NextResponse.json({ estimate });
   } catch (err) {
@@ -85,7 +96,7 @@ export async function GET(request: NextRequest) {
     const requirement = await getRequirement(projectId);
 
     // Combine both inputs → pricing report.
-    await primeExchangeRates();
+    await primePricingSources();
     const estimate = estimatePricing(architecture, requirement);
     return NextResponse.json({ estimate });
   } catch (err) {

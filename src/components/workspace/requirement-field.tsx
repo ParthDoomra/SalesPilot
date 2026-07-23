@@ -28,16 +28,17 @@ export function RequirementFieldRow({
   onSave,
   onCancel,
 }: RequirementFieldRowProps) {
+  const safeField = field ?? { value: null, confidence: 0, source: 'ai', aiValue: null, manualOverride: null, updatedAt: new Date().toISOString() };
   const [editValue, setEditValue] = React.useState('');
 
   React.useEffect(() => {
     if (isEditing) {
-      setEditValue(formatValueForEdit(field.value));
+      setEditValue(formatValueForEdit(safeField.value));
     }
-  }, [isEditing, field.value]);
+  }, [isEditing, safeField.value]);
 
-  const hasValue = field.value !== null && field.value !== undefined;
-  const isLowConfidence = hasValue && field.confidence < 70;
+  const hasValue = safeField.value !== null && safeField.value !== undefined;
+  const isLowConfidence = hasValue && safeField.confidence < 70;
 
   function handleSave() {
     let parsed: unknown = editValue;

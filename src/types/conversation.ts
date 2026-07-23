@@ -17,6 +17,7 @@ export interface Conversation {
   updatedAt: string;
   messageCount: number;
   status: 'active' | 'archived';
+  type?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -40,8 +41,10 @@ export interface Message {
   id: string;
   conversationId: string;
   role: MessageRole;
+  sender?: 'user' | 'assistant' | 'system';
   content: string;
   createdAt: string;
+  projectId?: string;
   /** Optional metadata attached by the AI pipeline. */
   metadata?: MessageMetadata;
   /** If true the message was edited after initial send. */

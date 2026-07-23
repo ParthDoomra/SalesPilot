@@ -20,15 +20,18 @@ interface FillMissingFieldsProps {
 export function FillMissingFields({ missingFields, onSubmit }: FillMissingFieldsProps) {
   const [values, setValues] = React.useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   // Only render fields that are currently missing.
   const fields = missingFields.map((key) => FIELD_META_MAP[key]).filter(Boolean);
 
   function setValue(key: string, value: string) {
+    setError(null);
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
   async function handleSubmit() {
+    setError(null);
     const answered = fields
       .map((meta) => ({ meta, raw: values[meta.key] }))
       .filter(({ raw }) => raw !== undefined && String(raw).trim() !== '')
@@ -39,11 +42,18 @@ export function FillMissingFields({ missingFields, onSubmit }: FillMissingFields
         return { field: meta.key, value: parsed };
       });
 
-    if (answered.length === 0) return;
+    if (answered.length === 0) {
+      setError('Please provide a value for at least one field before updating.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       await onSubmit(answered);
       setValues({});
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || 'Failed to update fields.');
     } finally {
       setIsSaving(false);
     }
@@ -92,6 +102,10 @@ export function FillMissingFields({ missingFields, onSubmit }: FillMissingFields
           </div>
         ))}
       </div>
+
+      {error && (
+        <p className="mt-2 text-xs font-medium text-danger">{error}</p>
+      )}
 
       <button
         onClick={handleSubmit}

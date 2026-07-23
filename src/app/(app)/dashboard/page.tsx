@@ -14,7 +14,8 @@ import { useAuth } from "@/lib/auth";
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const firstName = user?.name?.split(" ")[0];
+  const displayName = user?.fullName || user?.displayName || user?.name;
+  const firstName = displayName ? displayName.split(" ")[0] : "";
 
   return (
     <div>

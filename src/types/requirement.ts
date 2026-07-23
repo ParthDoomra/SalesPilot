@@ -38,6 +38,7 @@ export interface RequirementFields {
   industry: RequirementField<string>;
   employees: RequirementField<number>;
   users: RequirementField<number>;
+  workload: RequirementField<string>;
   region: RequirementField<string>;
   solutionType: RequirementField<string>;
   budget: RequirementField<number>;
@@ -52,6 +53,10 @@ export interface RequirementFields {
   security: RequirementField<string>;
   networking: RequirementField<string>;
   availability: RequirementField<string>;
+  aiMlRequirements: RequirementField<string>;
+  integrations: RequirementField<string>;
+  growthExpectations: RequirementField<string>;
+  businessConstraints: RequirementField<string>;
 }
 
 /** Key names that can appear on the RequirementFields object. */
@@ -106,6 +111,7 @@ export const REQUIREMENT_FIELD_KEYS: RequirementFieldKey[] = [
   'industry',
   'employees',
   'users',
+  'workload',
   'region',
   'solutionType',
   'budget',
@@ -120,6 +126,10 @@ export const REQUIREMENT_FIELD_KEYS: RequirementFieldKey[] = [
   'security',
   'networking',
   'availability',
+  'aiMlRequirements',
+  'integrations',
+  'growthExpectations',
+  'businessConstraints',
 ];
 
 /** Returns a brand-new empty RequirementModel. */

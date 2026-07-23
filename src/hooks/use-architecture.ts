@@ -8,6 +8,7 @@
 import * as React from 'react';
 import { useArchitectureStore } from '@/features/workspace/stores/architecture-store';
 import { useProjectArchitectureStore } from '@/lib/project-architecture-store';
+import type { ProviderRecommendation } from '@/services/ai/cloud-recommender';
 import type { CloudProvider, ArchitectureModel, ArchitectureOption, ArchitectureVersion } from '@/types';
 
 export function useArchitecture(projectId: string) {
@@ -40,6 +41,12 @@ export function useArchitecture(projectId: string) {
 
   const [versions, setVersions] = React.useState<ArchitectureVersion[]>([]);
   const [loadingVersions, setLoadingVersions] = React.useState(false);
+
+  // Latest AI provider recommendation (from the last generate). Transient UI
+  // state — drives the AI Recommendation card in the container.
+  const [recommendation, setRecommendation] = React.useState<ProviderRecommendation | null>(null);
+  const [recommendationDismissed, setRecommendationDismissed] = React.useState(false);
+  const dismissRecommendation = React.useCallback(() => setRecommendationDismissed(true), []);
 
   React.useEffect(() => {
     if (projectId) {
@@ -90,6 +97,8 @@ export function useArchitecture(projectId: string) {
 
       const data = await res.json();
       syncArchitecture(data.architecture);
+      setRecommendation(data.recommendation ?? null);
+      setRecommendationDismissed(false);
       await loadVersions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error generating solution.');
@@ -189,6 +198,9 @@ export function useArchitecture(projectId: string) {
     exportOpen,
     versions,
     loadingVersions,
+    recommendation,
+    recommendationDismissed,
+    dismissRecommendation,
     generate,
     selectOption,
     selectProvider,
