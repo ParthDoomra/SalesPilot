@@ -2,97 +2,172 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { CURRENT_USER } from "./mock-data";
 import type { User } from "./types";
+import { isFirebaseConfigured } from "@/services/firebase/config";
+import {
+  subscribeToAuthState,
+  signInWithEmail,
+  signUpWithEmail,
+  signInWithGoogle,
+  signOutUser,
+  completeGoogleRedirectIfPresent,
+} from "@/services/firebase/auth";
+import { firebaseLogger } from "@/utils/logger";
 
 /**
- * Mock authentication layer.
+ * Firebase Authentication provider.
  *
- * This mirrors the shape of a real Firebase Auth integration so it can be
- * swapped in later without touching consuming components:
- *   - `user` matches the app's `User` type (would come from Firestore's
- *     `users` collection, keyed by Firebase Auth UID).
- *   - `signIn` / `signUp` / `signOut` are async and return the same shape
- *     `onAuthStateChanged` + a Firestore read would produce.
- *   - Session is persisted to localStorage instead of a Firebase session
- *     cookie/token.
+ * Session persistence is handled by Firebase Auth (survives page refresh).
+ * User profile is loaded from / written to Firestore `users/{uid}`.
  */
 
 interface AuthContextValue {
   user: User | null;
   status: "loading" | "authenticated" | "unauthenticated";
+  error: string | null;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (name: string, email: string, password: string) => Promise<{ error?: string }>;
-  signOut: () => void;
+  signInWithGoogle: () => Promise<{ error?: string }>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
-const STORAGE_KEY = "salespilot_session";
-
-function fakeDelay(ms = 550) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+const FIREBASE_READY = isFirebaseConfigured();
+const CONFIG_ERROR = FIREBASE_READY
+  ? null
+  : "Firebase is not configured. Check your environment variables.";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
-  const [status, setStatus] = React.useState<"loading" | "authenticated" | "unauthenticated">("loading");
+  const [status, setStatus] = React.useState<"loading" | "authenticated" | "unauthenticated">(
+    FIREBASE_READY ? "loading" : "unauthenticated"
+  );
+  const [error, setError] = React.useState<string | null>(CONFIG_ERROR);
 
   React.useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        setUser(JSON.parse(raw));
-        setStatus("authenticated");
-      } else {
-        setStatus("unauthenticated");
-      }
-    } catch {
-      setStatus("unauthenticated");
+    if (!FIREBASE_READY) {
+      firebaseLogger.error(
+        "Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* env vars in .env.local"
+      );
+      return;
     }
+
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        // Complete any pending Google redirect before attaching the listener.
+        await completeGoogleRedirectIfPresent();
+        if (cancelled) return;
+
+        unsubscribe = subscribeToAuthState(
+          (nextUser) => {
+            if (cancelled) return;
+            setUser(nextUser);
+            setStatus(nextUser ? "authenticated" : "unauthenticated");
+            setError(null);
+          },
+          (authError) => {
+            if (cancelled) return;
+            setError(authError.message);
+          }
+        );
+      } catch (err) {
+        firebaseLogger.error("AuthProvider failed to initialize", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to initialize authentication.");
+          setStatus("unauthenticated");
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, []);
 
   const signIn = React.useCallback(async (email: string, password: string) => {
-    await fakeDelay();
+    setError(null);
     if (!email || !password) {
       return { error: "Enter your email and password to continue." };
     }
-    if (password.length < 4) {
-      return { error: "That password doesn't look right. Try again." };
+    const result = await signInWithEmail(email, password);
+    if (result.error) {
+      setError(result.error);
+      return { error: result.error };
     }
-    const sessionUser: User = { ...CURRENT_USER, email, displayName: CURRENT_USER.name };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionUser));
-    setUser(sessionUser);
-    setStatus("authenticated");
+    if (result.user) {
+      setUser(result.user);
+      setStatus("authenticated");
+    }
     return {};
   }, []);
 
   const signUp = React.useCallback(async (name: string, email: string, password: string) => {
-    await fakeDelay(700);
+    setError(null);
     if (!name || !email || !password) {
       return { error: "Fill in every field to create your account." };
     }
     if (password.length < 6) {
       return { error: "Use at least 6 characters for your password." };
     }
-    const sessionUser: User = { ...CURRENT_USER, name, email, displayName: name };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionUser));
-    setUser(sessionUser);
-    setStatus("authenticated");
+    const result = await signUpWithEmail(name, email, password);
+    if (result.error) {
+      setError(result.error);
+      return { error: result.error };
+    }
+    if (result.user) {
+      setUser(result.user);
+      setStatus("authenticated");
+    }
     return {};
   }, []);
 
-  const signOut = React.useCallback(() => {
-    window.localStorage.removeItem(STORAGE_KEY);
-    setUser(null);
-    setStatus("unauthenticated");
+  const handleGoogleSignIn = React.useCallback(async () => {
+    setError(null);
+    const result = await signInWithGoogle();
+    if (result.error) {
+      setError(result.error);
+      return { error: result.error };
+    }
+    if (result.user) {
+      setUser(result.user);
+      setStatus("authenticated");
+    }
+    return {};
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, status, signIn, signUp, signOut }}>
-      {children}
-    </AuthContext.Provider>
+  const signOut = React.useCallback(async () => {
+    setError(null);
+    try {
+      await signOutUser();
+      setUser(null);
+      setStatus("unauthenticated");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sign-out failed.";
+      setError(message);
+    }
+  }, []);
+
+  const value = React.useMemo<AuthContextValue>(
+    () => ({
+      user,
+      status,
+      error,
+      signIn,
+      signUp,
+      signInWithGoogle: handleGoogleSignIn,
+      signOut,
+    }),
+    [user, status, error, signIn, signUp, handleGoogleSignIn, signOut]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
@@ -101,7 +176,7 @@ export function useAuth() {
   return ctx;
 }
 
-/** Redirects to /login if there is no active mock session. */
+/** Redirects to /login if there is no active Firebase session. */
 export function useRequireAuth() {
   const { status } = useAuth();
   const router = useRouter();
